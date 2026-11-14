@@ -117,15 +117,6 @@ Affected: @arkade-os/sdk/repositories/realm, @arkade-os/sdk/adapters/expo,
 Workaround: put ALL exports (including subpath-specific ones) in the root
 index.js of the stub. The physical subpath files are never used by ?imp.
 
-### NOTE: file: deps need a trailing `//` to be treated as a package
-`"pkg": "file:./dir/pkg"` (no trailing `//`) is a plain path inside
-bluewallet-web: pkg's own package.json (main/exports) is never read, and only
-the alt list (.js, /index.js, ...) is tried. It works only if pkg has a root
-index.js. `"pkg": "file:./dir/pkg//"` makes it its own package, and `main`
-and `exports` are honored (bc-bech32, bip47, silent-payments use this).
-This is likely also the real cause of "LIMITATION: file: dep subpath imports
-ignore physical files" above (not yet tested).
-
 ## JS Coding Conventions (same as lif-wallet)
 - No spaces around arrow functions: (a, b)=>code
 - No spaces around === and ==
