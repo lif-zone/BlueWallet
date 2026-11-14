@@ -23,6 +23,17 @@
         "type": "jsx"
       }
     },
+    "patches": {
+      "github:BlueWallet/SilentPayments": {
+        "./package.json": {
+          "json": {
+            "lif": {
+              "alt": [".js", ".ts", "/index.js", "/index.ts"]
+            }
+          }
+        }
+      }
+    },
     "patch": {
       "@react-navigation/elements": {
         "./lib/module/index.js": {
@@ -166,7 +177,7 @@
     "react-native-worklets": "file:./stubs/react-native-worklets",
     "readable-stream": "3.6.2",
     "realm": "file:./stubs/realm",
-    "silent-payments": "file:./stubs/silent-payments//",
+    "silent-payments": "github:BlueWallet/SilentPayments#5eea40e",
     "slip39": "file:./stubs/slip39",
     "stream": "npm:stream-browserify@3.0.0",
     "stream-browserify": "3.0.0",
