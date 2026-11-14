@@ -46,7 +46,10 @@ web entry point.
 
 ## Completed
 - [x] Convert bc-bech32/dist to ESM (was CJS with require/exports)
-- [x] Change bc-ur/dist imports to use relative paths for bc-bech32
+- [x] bc-bech32 declared as `file:./blue_modules/bc-bech32//` (own package,
+      `main` honored); bc-ur/dist imports it by name again
+- [x] lif-kernel: missing import via .lif.imp returned 500 instead of 404
+      (fixed in kernel.js fetch_lpm_follow)
 - [x] Remove module.exports from 5 stubs (rn-background-fetch, rn-default-pref,
       rn-share, rn-fs, rn-haptic-feedback)
 - [x] Create arkade-os-sdk subpath files (repositories/realm.js, adapters/expo.js)
@@ -114,30 +117,14 @@ Affected: @arkade-os/sdk/repositories/realm, @arkade-os/sdk/adapters/expo,
 Workaround: put ALL exports (including subpath-specific ones) in the root
 index.js of the stub. The physical subpath files are never used by ?imp.
 
-### BUG: missing import via .lif.imp returns 500 instead of 404
-Repro: `fetch("/.lif/local/bluewallet-web//.lif.imp/bc-bech32?imp")`
-  with `"bc-bech32": "file:./blue_modules/bc-bech32"` in package.json.
-Two parts:
-1. Our config mistake (not a lif-kernel bug): `file:./blue_modules/bc-bech32`
-   without a trailing `//` is treated as a plain path inside bluewallet-web
-   (lfile local/bluewallet-web//blue_modules/bc-bech32), so bc-bech32's own
-   package.json ("main": "dist/index.js") is never read. Only the alt list
-   (.js, /index.js, ...) is tried, and bc-bech32 has no root index.js, so
-   the file is not_exist. Stubs with a root index.js (bip38, coinselect)
-   work by luck of the "/index.js" alt. Deps written with trailing `//`
-   (bip47, silent-payments) are their own package and honor `main`.
-   Verified: /.lif/local/bluewallet-web/blue_modules/bc-bech32//?imp returns
-   200 `export * from ".../bc-bech32//dist/index.js?mjs"`.
-   Fix: `"bc-bech32": "file:./blue_modules/bc-bech32//"`.
-2. lif-kernel bug: the not_exist is reported as a 500 crash. In
-   fetch_lpm_follow (kernel.js:1157) the result is wrapped as
-   {redirect, redirect_file: {not_exist: true}}. responce_tr_send
-   (kernel.js:1089) checks f.not_exist only on the outer object, then
-   unwraps f = f.redirect_file and calls file_tsx_to_js(f), where
-   _path_ext(f.lfile) (util.js:378) throws on undefined lfile.
-   Expected: 404 not found.
-The same wrong diagnosis likely applies to "LIMITATION: file: dep subpath
-imports ignore physical files" above: without `//` the stub is not a package.
+### NOTE: file: deps need a trailing `//` to be treated as a package
+`"pkg": "file:./dir/pkg"` (no trailing `//`) is a plain path inside
+bluewallet-web: pkg's own package.json (main/exports) is never read, and only
+the alt list (.js, /index.js, ...) is tried. It works only if pkg has a root
+index.js. `"pkg": "file:./dir/pkg//"` makes it its own package, and `main`
+and `exports` are honored (bc-bech32, bip47, silent-payments use this).
+This is likely also the real cause of "LIMITATION: file: dep subpath imports
+ignore physical files" above (not yet tested).
 
 ## JS Coding Conventions (same as lif-wallet)
 - No spaces around arrow functions: (a, b)=>code
