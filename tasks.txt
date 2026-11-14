@@ -50,6 +50,10 @@ web entry point.
       `main` honored); bc-ur/dist imports it by name again
 - [x] lif-kernel: missing import via .lif.imp returned 500 instead of 404
       (fixed in kernel.js fetch_lpm_follow)
+- [x] lif-kernel: file: dep imports dropped the subpath (pkg/sub/file got
+      the package main). Fixed in lpm.js T_npm_import_parse. Added
+      stubs/arkade-os-boltz-swap/repositories/realm.js, which the app had
+      only been getting through that bug.
 - [x] Remove module.exports from 5 stubs (rn-background-fetch, rn-default-pref,
       rn-share, rn-fs, rn-haptic-feedback)
 - [x] Create arkade-os-sdk subpath files (repositories/realm.js, adapters/expo.js)
@@ -104,18 +108,6 @@ This makes debugging very painful — one bad import poisons everything.
 Expected: errors should be isolated per-request, not corrupt global state.
 Repro: load the app, trigger a module that causes lmod error, then try
   fetching any other ?mjs or ?imp URL.
-
-### LIMITATION: file: dep subpath imports ignore physical files
-When package.json has `"pkg": "file:./stubs/pkg"` and the code imports
-`pkg/sub/path`, lif-kernel resolves it via ?imp to:
-  `export * from "/.lif/local/.../stubs/pkg/index.js?mjs"`
-It always re-exports from the main entry, ignoring any physical file at
-stubs/pkg/sub/path.js. The dep's package.json `exports` field is also
-not honored.
-Affected: @arkade-os/sdk/repositories/realm, @arkade-os/sdk/adapters/expo,
-  @arkade-os/boltz-swap/repositories/realm.
-Workaround: put ALL exports (including subpath-specific ones) in the root
-index.js of the stub. The physical subpath files are never used by ?imp.
 
 ## JS Coding Conventions (same as lif-wallet)
 - No spaces around arrow functions: (a, b)=>code
