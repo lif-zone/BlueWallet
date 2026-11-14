@@ -75,8 +75,8 @@
     "serve": "node node_modules/lif-kernel/web/serve.js -p 4202"
   },
   "dependencies": {
-    "@arkade-os/boltz-swap": "file:./stubs/arkade-os-boltz-swap",
-    "@arkade-os/sdk": "file:./stubs/arkade-os-sdk",
+    "@arkade-os/boltz-swap": "file:./stubs/arkade-os-boltz-swap//",
+    "@arkade-os/sdk": "file:./stubs/arkade-os-sdk//",
     "@bugsnag/react-native": "file:./stubs/bugsnag-react-native",
     "@keystonehq/bc-ur-registry": "0.8.1",
     "@ngraveio/bc-ur": "1.1.13",

@@ -31,13 +31,6 @@ Once elements is patched, restart Chrome with fresh profile and test:
 Many deps already work. Remaining potential issues in screen/* components
 that were not individually tested yet.
 
-### 4. Fix any remaining missing stub exports
-Pattern: lif-kernel file: dep subpath imports (like @arkade-os/sdk/repos/realm)
-always do `export *` from the main index.js, ignoring physical subpath files.
-All needed exports must be in the root index.js of each stub.
-Already fixed for: arkade-os-sdk, arkade-os-boltz-swap.
-May need more for other stubs if new subpath imports surface.
-
 ### 5. Handle __DEV__ global
 MasterView.tsx uses `{__DEV__ && <DevMenu />}`. DevMenu is now a no-op stub,
 but __DEV__ itself may be undefined in lif-kernel context → ReferenceError.
@@ -54,6 +47,10 @@ web entry point.
       the package main). Fixed in lpm.js T_npm_import_parse. Added
       stubs/arkade-os-boltz-swap/repositories/realm.js, which the app had
       only been getting through that bug.
+- [x] Removed the arkade stub workarounds for that bug: subpath exports now
+      live only in the subpath files (not duplicated in the root index.js),
+      the stubs' package.json `exports` point at those files, and both
+      entries are declared with a trailing `//`.
 - [x] Remove module.exports from 5 stubs (rn-background-fetch, rn-default-pref,
       rn-share, rn-fs, rn-haptic-feedback)
 - [x] Create arkade-os-sdk subpath files (repositories/realm.js, adapters/expo.js)

@@ -3,9 +3,7 @@ export class BoltzSubmarineSwap {}
 export class BoltzSwap {}
 export class BoltzSwapProvider {}
 export class SwapManager {}
-export class RealmSwapRepository {}
 export const SubmarineRefundOutcome = {};
-export const BoltzRealmSchemas = [];
 export const decodeInvoice = ()=>({});
 export const isChainSwapClaimable = ()=>false;
 export const isChainSwapRefundable = ()=>false;
