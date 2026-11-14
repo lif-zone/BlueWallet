@@ -1,5 +1,5 @@
 import { encodeSimpleCBOR } from './miniCbor.js';
-import { encodeBc32Data } from '../../bc-bech32/dist/index.js';
+import { encodeBc32Data } from 'bc-bech32';
 import { sha256Hash, compose3 } from './utils.js';
 
 var composeUR = function(payload, type) {

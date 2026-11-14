@@ -1,6 +1,6 @@
 import { sha256Hash } from './utils.js';
 import { decodeSimpleCBOR } from './miniCbor.js';
-import { decodeBc32Data } from '../../bc-bech32/dist/index.js';
+import { decodeBc32Data } from 'bc-bech32';
 
 var checkAndGetSequence = function(sequence) {
   var pieces = sequence.toUpperCase().split('OF');
