@@ -26,23 +26,6 @@ Affected: @react-native-vector-icons (all icon sets import glyphmap .json files)
   The same packages also `require('../../fonts/Entypo.ttf')` (asset import).
 Workaround: the icon sets are replaced by stubs (stubs/react-native-vector-icons-*).
 
-### FEATURE REQUEST: Asset imports (Webpack-compatible)
-`import icon from './icon.png'` is not valid ESM but is a widely supported
-bundler convention. Webpack, Vite, Metro, Parcel, esbuild all detect imports
-by file extension and return a JS module exporting the asset's URL.
-lif-kernel should do the same for Webpack compatibility — detect known asset
-extensions and return: `export default "<served URL of the file>"`.
-Webpack has no built-in default list — each project configures its own rules.
-Common convention (from Create React App, Metro, etc.):
-  images:  .png .jpg .jpeg .gif .webp .avif .ico .bmp .svg
-  fonts:   .woff .woff2 .eot .ttf .otf
-lif-kernel should pick a reasonable set of extensions to handle.
-The served URL should point to the actual binary file on the lif-kernel
-server so the browser can fetch it when used (e.g. as <img src>).
-Affected: @react-navigation/elements (5 PNG imports), possibly others.
-Workaround: lif.patch in package.json rewrites each import to
-  `const x = import.meta.resolve('./x.png')`.
-
 ### BUG: Service worker state corruption after lmod error
 Once the service worker hits `TypeError: Cannot read properties of undefined
 (reading 'lmod')`, ALL later requests (even react, App.tsx) return 500 with
