@@ -2,68 +2,15 @@
 # Porting BlueWallet (React Native) to run on web via lif-kernel at port 4202
 
 ## Current Status
-App loads main.tsx, registers service worker, shows "Loading..." then attempts
-dynamic import of App.tsx. App.tsx's import chain partially works — many deps
-resolve OK but navigation/MasterView fails due to @react-navigation/elements
-importing .png files which lif-kernel can't serve as JS modules.
+App loads and renders the wallets list. Send, SLIP39 and Lightning/Ark flows
+were not exercised yet.
 
 ## Open Tasks
 
-### 1. Fix JSON imports blocking App.tsx load [BLOCKED on lif-kernel]
-@react-native-vector-icons/entypo (and likely other icon sets) does:
-  `import glyphMap from "../../glyphmaps/Entypo.json"`
-Browser rejects: "Expected a JavaScript-or-Wasm module script but the server
-  responded with a MIME type of application/json".
-Fix: lif-kernel Babel transpiler should add `with {type: 'json'}` to imports
-  ending in .json. This is a lif-kernel change, not a BlueWallet-web patch.
-Same icon packages also do `require('../../fonts/Entypo.ttf')` — font binary
-  import, related to the asset imports feature request.
-
-### 2. Search for other .png/.jpg image imports in npm deps
-After fixing elements, there may be other npm packages that import image files.
-BlueWallet's own themes.tsx uses require('../img/close.png') — need to verify
-if lif-kernel handles require() for images differently than import.
-Also check: components that import SVG files, font files, etc.
-
-### 3. Test full App.tsx import chain after elements fix
-Once elements is patched, restart Chrome with fresh profile and test:
-  import('/.lif/local/bluewallet-web//App.tsx?mjs')
-Many deps already work. Remaining potential issues in screen/* components
-that were not individually tested yet.
-
-### 5. Handle __DEV__ global
-MasterView.tsx uses `{__DEV__ && <DevMenu />}`. DevMenu is now a no-op stub,
-but __DEV__ itself may be undefined in lif-kernel context → ReferenceError.
-Need to define globalThis.__DEV__ = false (or true) somewhere in main.tsx or
-web entry point.
-
-## Completed
-- [x] Convert bc-bech32/dist to ESM (was CJS with require/exports)
-- [x] bc-bech32 declared as `file:./blue_modules/bc-bech32//` (own package,
-      `main` honored); bc-ur/dist imports it by name again
-- [x] lif-kernel: missing import via .lif.imp returned 500 instead of 404
-      (fixed in kernel.js fetch_lpm_follow)
-- [x] lif-kernel: file: dep imports dropped the subpath (pkg/sub/file got
-      the package main). Fixed in lpm.js T_npm_import_parse. Added
-      stubs/arkade-os-boltz-swap/repositories/realm.js, which the app had
-      only been getting through that bug.
-- [x] Removed the arkade stub workarounds for that bug: subpath exports now
-      live only in the subpath files (not duplicated in the root index.js),
-      the stubs' package.json `exports` point at those files, and both
-      entries are declared with a trailing `//`.
-- [x] Remove module.exports from 5 stubs (rn-background-fetch, rn-default-pref,
-      rn-share, rn-fs, rn-haptic-feedback)
-- [x] Create arkade-os-sdk subpath files (repositories/realm.js, adapters/expo.js)
-- [x] Add missing exports to arkade-os-sdk stub (ARK_REALM_SCHEMA_VERSION,
-      ArkRealmSchemas, runArkRealmMigrations, RestArkProvider, ContractManager,
-      VtxoManager, DelegateVtxo, networks)
-- [x] Add missing exports to arkade-os-boltz-swap stub (RealmSwapRepository,
-      BoltzRealmSchemas, SwapManager, isSubmarineFinalStatus, isReverseFinalStatus,
-      isChainFinalStatus, updateChainSwapStatus, updateReverseSwapStatus,
-      updateSubmarineSwapStatus)
-- [x] Add missing exports to react-native-svg stub (Image, Mask, Pattern,
-      Ellipse, TSpan, ForeignObject, Symbol, Marker)
-- [x] Stub DevMenu.tsx (uses DevSettings not available in react-native-web)
+### 1. Search for other .png/.jpg image imports in npm deps
+@react-navigation/elements and drawer are patched (lif.patch in package.json).
+Other npm packages may also import image, SVG or font files; none seen so far
+on app load.
 
 ## lif-kernel Bugs / Limitations
 
@@ -76,7 +23,8 @@ Latest Chrome fully supports import attributes (`with {type: 'json'}`).
 This is the standards-forward solution — no wrapping JSON as JS needed.
 Affected: @react-native-vector-icons (all icon sets import glyphmap .json files)
   e.g. `import glyphMap from "../../glyphmaps/Entypo.json"`
-Workaround: none currently (blocks App.tsx from loading)
+  The same packages also `require('../../fonts/Entypo.ttf')` (asset import).
+Workaround: the icon sets are replaced by stubs (stubs/react-native-vector-icons-*).
 
 ### FEATURE REQUEST: Asset imports (Webpack-compatible)
 `import icon from './icon.png'` is not valid ESM but is a widely supported
@@ -92,19 +40,21 @@ lif-kernel should pick a reasonable set of extensions to handle.
 The served URL should point to the actual binary file on the lif-kernel
 server so the browser can fetch it when used (e.g. as <img src>).
 Affected: @react-navigation/elements (5 PNG imports), possibly others.
-Workaround: manually patch the importing file to use `const x = ''` instead.
-
+Workaround: lif.patch in package.json rewrites each import to
+  `const x = import.meta.resolve('./x.png')`.
 
 ### BUG: Service worker state corruption after lmod error
-When any module resolution triggers `TypeError: Cannot read properties of
-undefined (reading 'lmod')`, the service worker's internal state becomes
-permanently corrupted. ALL subsequent requests (even for previously working
-modules like react, react-native) return 500 with the same lmod error.
-Only fix: restart Chrome with a fresh --user-data-dir to get a new SW.
-This makes debugging very painful — one bad import poisons everything.
+Once the service worker hits `TypeError: Cannot read properties of undefined
+(reading 'lmod')`, ALL later requests (even react, App.tsx) return 500 with
+the same error until the service worker is unregistered and the page reloaded.
+Seen again 2026-11-15. Trigger not known: on a fresh service worker, fetching
+missing files, .json and .png URLs did not cause it.
 Expected: errors should be isolated per-request, not corrupt global state.
-Repro: load the app, trigger a module that causes lmod error, then try
-  fetching any other ?mjs or ?imp URL.
+
+### LIMITATION: bare-name lif.patches keys only match npm deps
+A `lif.patches` key like `silent-payments` parses to `npm/silent-payments`, so
+it does not match a git or file: dep of that name. The key must be written as
+the dep target, e.g. `github:BlueWallet/SilentPayments`.
 
 ## JS Coding Conventions (same as lif-wallet)
 - No spaces around arrow functions: (a, b)=>code
