@@ -12,7 +12,7 @@ function flatStyle(style){
 export function createIconSet(config){
   if (!config)
     config = {};
-  let Icon = React.forwardRef(({name, size, color, style, ...props}, ref)=>{
+  let Icon = React.forwardRef(({name, size, color, style, iconStyle, accessibilityLabel, testID, ...props}, ref)=>{
     if (size==null)
       size = 24;
     if (!color)
