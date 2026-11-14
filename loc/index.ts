@@ -1,4 +1,4 @@
-import enJson from './en_data.js';
+import enJson from './en.json' with {type: 'json'};
 import {BitcoinUnit} from '../models/bitcoinUnits';
 
 const loc: any = {...enJson};

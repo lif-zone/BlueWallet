@@ -1,5 +1,5 @@
 import { fetch } from '../util/fetch';
-import untypedFiatUnit from './fiatUnits_data.js';
+import untypedFiatUnit from './fiatUnits.json' with {type: 'json'};
 
 export const FiatUnitSource = {
   Coinbase: 'Coinbase',
