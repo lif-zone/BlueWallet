@@ -14,26 +14,6 @@ on app load.
 
 ## lif-kernel Bugs / Limitations
 
-### FEATURE REQUEST: JSON import attributes
-`import data from './file.json'` without `with {type: 'json'}` is common in
-bundler-built code (Webpack, Metro, etc.) but browsers require the import
-attribute. lif-kernel's Babel transpiler should detect imports where the
-specifier ends in `.json` and add `with {type: 'json'}` automatically.
-Latest Chrome fully supports import attributes (`with {type: 'json'}`).
-This is the standards-forward solution — no wrapping JSON as JS needed.
-Affected: @react-native-vector-icons (all icon sets import glyphmap .json files)
-  e.g. `import glyphMap from "../../glyphmaps/Entypo.json"`
-  The same packages also `require('../../fonts/Entypo.ttf')` (asset import).
-Workaround: the icon sets are replaced by stubs (stubs/react-native-vector-icons-*).
-
-### BUG: Service worker state corruption after lmod error
-Once the service worker hits `TypeError: Cannot read properties of undefined
-(reading 'lmod')`, ALL later requests (even react, App.tsx) return 500 with
-the same error until the service worker is unregistered and the page reloaded.
-Seen again 2026-11-15. Trigger not known: on a fresh service worker, fetching
-missing files, .json and .png URLs did not cause it.
-Expected: errors should be isolated per-request, not corrupt global state.
-
 ### LIMITATION: bare-name lif.patches keys only match npm deps
 A `lif.patches` key like `silent-payments` parses to `npm/silent-payments`, so
 it does not match a git or file: dep of that name. The key must be written as
