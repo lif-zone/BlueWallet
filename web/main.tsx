@@ -69,15 +69,9 @@ async function require_init(){
   // class/wallets/legacy-wallet.ts: late load, circular import
   req.register('./hd-segwit-bech32-wallet',
     await import('../class/wallets/hd-segwit-bech32-wallet.ts'));
-  // screen/settings/ReleaseNotes.tsx: build output, may not exist
-  let notes = '';
-  try {
-    notes = (await import('../release-notes.json', {with: {type: 'json'}}))
-      .default;
-  } catch(e){
-    console.warn('release-notes.json not found');
-  }
-  req.register('../../release-notes', notes);
+  // screen/settings/ReleaseNotes.tsx: release-notes.json is a native build
+  // output, skipped on web
+  req.register('../../release-notes', '');
 }
 
 (async()=>{
