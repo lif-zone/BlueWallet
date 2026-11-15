@@ -298,10 +298,8 @@ export const runOnWorklet = (fn)=>fn;
 export default {};
 "
 
-create_stub "lottie-react-native" "
-import React from 'react';
-export default function LottieView(props){return React.createElement('div',{style:props.style});}
-"
+# lottie-react-native: real implementation, written by hand in
+# lottie-react-native/index.js (not generated here)
 
 create_stub "react-native-qrcode-svg" "
 import React from 'react';

@@ -1,1 +1,8 @@
-{"name":"lottie-react-native","version":"0.0.0","main":"index.js"}
+{
+  "name": "lottie-react-native",
+  "version": "0.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "lottie-web": "5.13.0"
+  }
+}
