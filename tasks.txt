@@ -8,11 +8,3 @@ were not exercised yet.
 ## Open Tasks
 
 (none)
-
-## lif-kernel Bugs / Limitations
-
-### LIMITATION: bare-name lif.patches keys only match npm deps
-A `lif.patches` key like `silent-payments` parses to `npm/silent-payments`, so
-it does not match a git or file: dep of that name. The key must be written as
-the dep target, e.g. `github:BlueWallet/SilentPayments`.
-
