@@ -1,11 +1,21 @@
+// Clipboard for web, on navigator.clipboard.
+import {toast_show} from 'bw-web/toast.js';
+
 const Clipboard = {
   getString: async()=>{
     try { return await navigator.clipboard.readText(); }
     catch(e){ return ''; }
   },
-  setString: (text)=>{
-    try { navigator.clipboard.writeText(text); }
-    catch(e){}
+  // a short popup tells the user, as Android does by itself.
+  // not when clearing the clipboard (empty text)
+  setString: async text=>{
+    try {
+      await navigator.clipboard.writeText(text);
+      if (text)
+        toast_show('Copied to clipboard');
+    } catch(e){
+      console.warn('clipboard write failed', e);
+    }
   },
   hasString: async()=>{
     try {
