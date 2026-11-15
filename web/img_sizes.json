@@ -1,0 +1,209 @@
+{
+  "/img/addWallet/bitcoin.png": {
+    "width": 34,
+    "height": 34,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/addWallet/lightning.png": {
+    "width": 34,
+    "height": 34,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/addWallet/vault.png": {
+    "width": 34,
+    "height": 34,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/addWallet/vault_main.png": {
+    "width": 138,
+    "height": 131,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/bluebeast.png": {
+    "width": 309,
+    "height": 378,
+    "scales": [
+      1
+    ]
+  },
+  "/img/btc-shape-rtl.png": {
+    "width": 375,
+    "height": 360,
+    "scales": [
+      1
+    ]
+  },
+  "/img/btc-shape.png": {
+    "width": 375,
+    "height": 360,
+    "scales": [
+      1
+    ]
+  },
+  "/img/close-white.png": {
+    "width": 14,
+    "height": 14,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/close.png": {
+    "width": 14,
+    "height": 14,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/coin1.png": {
+    "width": 347,
+    "height": 346,
+    "scales": [
+      1
+    ]
+  },
+  "/img/coin2.png": {
+    "width": 346,
+    "height": 346,
+    "scales": [
+      1
+    ]
+  },
+  "/img/icon.png": {
+    "width": 3072,
+    "height": 3072,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/lnd-shape-rtl.png": {
+    "width": 375,
+    "height": 360,
+    "scales": [
+      1
+    ]
+  },
+  "/img/lnd-shape.png": {
+    "width": 375,
+    "height": 360,
+    "scales": [
+      1
+    ]
+  },
+  "/img/mshelp/mshelp-intro.png": {
+    "width": 341,
+    "height": 344,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/mshelp/tip2.png": {
+    "width": 327,
+    "height": 132,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/mshelp/tip3.png": {
+    "width": 327,
+    "height": 132,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/mshelp/tip4.png": {
+    "width": 327,
+    "height": 132,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/mshelp/tip5.png": {
+    "width": 327,
+    "height": 132,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/qr-code.png": {
+    "width": 240,
+    "height": 240,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/round-compare-arrows-24-px.png": {
+    "width": 14,
+    "height": 20,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/scan-white.png": {
+    "width": 19,
+    "height": 14,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/scan.png": {
+    "width": 19,
+    "height": 14,
+    "scales": [
+      1,
+      2,
+      3
+    ]
+  },
+  "/img/vault-shape-rtl.png": {
+    "width": 375,
+    "height": 360,
+    "scales": [
+      1
+    ]
+  },
+  "/img/vault-shape.png": {
+    "width": 375,
+    "height": 360,
+    "scales": [
+      1
+    ]
+  }
+}

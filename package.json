@@ -51,6 +51,7 @@
         },
         "./lib/module/Header/Header.js": {
           "replace_line": {
+            "end: {\nflexDirection: 'row',\nalignItems: 'center',\njustifyContent: 'flex-end'": "end: {\n    flexDirection: 'row',\n    alignItems: 'center',\n    paddingEnd: 16,\n    justifyContent: 'flex-end'",
             "import searchIcon from '../assets/search-icon.png';": "const searchIcon = import.meta.resolve('../assets/search-icon.png');"
           }
         },
