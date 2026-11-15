@@ -32,52 +32,70 @@
             }
           }
         }
-      }
-    },
-    "patch": {
+      },
       "@react-navigation/elements": {
         "./lib/module/index.js": {
-          "import backIcon from './assets/back-icon.png';": "const backIcon = import.meta.resolve('./assets/back-icon.png');",
-          "import backIconMask from './assets/back-icon-mask.png';": "const backIconMask = import.meta.resolve('./assets/back-icon-mask.png');",
-          "import clearIcon from './assets/clear-icon.png';": "const clearIcon = import.meta.resolve('./assets/clear-icon.png');",
-          "import closeIcon from './assets/close-icon.png';": "const closeIcon = import.meta.resolve('./assets/close-icon.png');",
-          "import searchIcon from './assets/search-icon.png';": "const searchIcon = import.meta.resolve('./assets/search-icon.png');"
+          "replace_line": {
+            "import backIcon from './assets/back-icon.png';": "const backIcon = import.meta.resolve('./assets/back-icon.png');",
+            "import backIconMask from './assets/back-icon-mask.png';": "const backIconMask = import.meta.resolve('./assets/back-icon-mask.png');",
+            "import clearIcon from './assets/clear-icon.png';": "const clearIcon = import.meta.resolve('./assets/clear-icon.png');",
+            "import closeIcon from './assets/close-icon.png';": "const closeIcon = import.meta.resolve('./assets/close-icon.png');",
+            "import searchIcon from './assets/search-icon.png';": "const searchIcon = import.meta.resolve('./assets/search-icon.png');"
+          }
         },
         "./lib/module/Header/HeaderBackButton.js": {
-          "import backIcon from '../assets/back-icon.png';": "const backIcon = import.meta.resolve('../assets/back-icon.png');",
-          "import backIconMask from '../assets/back-icon-mask.png';": "const backIconMask = import.meta.resolve('../assets/back-icon-mask.png');"
+          "replace_line": {
+            "import backIcon from '../assets/back-icon.png';": "const backIcon = import.meta.resolve('../assets/back-icon.png');",
+            "import backIconMask from '../assets/back-icon-mask.png';": "const backIconMask = import.meta.resolve('../assets/back-icon-mask.png');"
+          }
         },
         "./lib/module/Header/Header.js": {
-          "import searchIcon from '../assets/search-icon.png';": "const searchIcon = import.meta.resolve('../assets/search-icon.png');"
+          "replace_line": {
+            "import searchIcon from '../assets/search-icon.png';": "const searchIcon = import.meta.resolve('../assets/search-icon.png');"
+          }
         },
         "./lib/module/Header/HeaderSearchBar.js": {
-          "import clearIcon from '../assets/clear-icon.png';": "const clearIcon = import.meta.resolve('../assets/clear-icon.png');",
-          "import closeIcon from '../assets/close-icon.png';": "const closeIcon = import.meta.resolve('../assets/close-icon.png');",
-          "import searchIcon from '../assets/search-icon.png';": "const searchIcon = import.meta.resolve('../assets/search-icon.png');"
+          "replace_line": {
+            "import clearIcon from '../assets/clear-icon.png';": "const clearIcon = import.meta.resolve('../assets/clear-icon.png');",
+            "import closeIcon from '../assets/close-icon.png';": "const closeIcon = import.meta.resolve('../assets/close-icon.png');",
+            "import searchIcon from '../assets/search-icon.png';": "const searchIcon = import.meta.resolve('../assets/search-icon.png');"
+          }
         }
       },
       "@react-navigation/drawer": {
         "./lib/module/views/DrawerToggleButton.js": {
-          "import toggleDrawerIcon from './assets/toggle-drawer-icon.png';": "const toggleDrawerIcon = import.meta.resolve('./assets/toggle-drawer-icon.png');"
+          "replace_line": {
+            "import toggleDrawerIcon from './assets/toggle-drawer-icon.png';": "const toggleDrawerIcon = import.meta.resolve('./assets/toggle-drawer-icon.png');"
+          }
         },
         "./lib/module/views/ScreenFallback.js": {
-          "Screens = require('react-native-screens');": "Screens = await import('react-native-screens');"
+          "replace_line": {
+            "Screens = require('react-native-screens');": "Screens = await import('react-native-screens');"
+          }
         }
       },
       "react-native-web": {
         "./dist/index.js": {
-          "export { default as useWindowDimensions } from './exports/useWindowDimensions';": "export { default as useWindowDimensions } from './exports/useWindowDimensions';\nexport function codegenNativeComponent(name){ return (props)=>null; }\nexport function PlatformColor(){ return undefined; }"
+          "replace_line": {
+            "export { default as useWindowDimensions } from './exports/useWindowDimensions';": "export { default as useWindowDimensions } from './exports/useWindowDimensions';\nexport function codegenNativeComponent(name){ return (props)=>null; }\nexport function PlatformColor(){ return undefined; }"
+          }
         },
         "./dist/exports/BackHandler/index.js": {
-          "console.error('BackHandler is not supported on web and should not be used.');": ""
+          "replace_line": {
+            "console.error('BackHandler is not supported on web and should not be used.');": ""
+          }
         },
         "./dist/exports/Alert/index.js": {
-          "static alert() {}": "static alert(title, message, buttons){\n    if (!buttons || !buttons.length){\n      window.alert(message||title);\n      return;\n    }\n    if (buttons.length==1){\n      window.alert((title?title+'\\n\\n':'')+(message||''));\n      buttons[0].onPress?.();\n      return;\n    }\n    let msg = (title?title+'\\n\\n':'')+(message||'');\n    if (window.confirm(msg)){\n      let btn = buttons.find(b=>b.style=='default')||buttons.find(b=>b.style!='cancel')||buttons[0];\n      btn.onPress?.();\n    } else {\n      let cb = buttons.find(b=>b.style=='cancel');\n      if (cb) cb.onPress?.();\n    }\n  }"
+          "replace_line": {
+            "static alert() {}": "static alert(title, message, buttons){\n    if (!buttons || !buttons.length){\n      window.alert(message||title);\n      return;\n    }\n    if (buttons.length==1){\n      window.alert((title?title+'\\n\\n':'')+(message||''));\n      buttons[0].onPress?.();\n      return;\n    }\n    let msg = (title?title+'\\n\\n':'')+(message||'');\n    if (window.confirm(msg)){\n      let btn = buttons.find(b=>b.style=='default')||buttons.find(b=>b.style!='cancel')||buttons[0];\n      btn.onPress?.();\n    } else {\n      let cb = buttons.find(b=>b.style=='cancel');\n      if (cb) cb.onPress?.();\n    }\n  }"
+          }
         }
       },
       "@react-navigation/devtools": {
         "./lib/module/index.js": {
-          "if (process.env.NODE_ENV !== 'production') {\n  useLogger = require('./useLogger').useLogger;\n  useReduxDevToolsExtension = require('./useReduxDevToolsExtension').useReduxDevToolsExtension;\n} else {\n  useLogger = noop;\n  useReduxDevToolsExtension = noop;\n}": "useLogger = noop;\nuseReduxDevToolsExtension = noop;"
+          "replace_line": {
+            "if (process.env.NODE_ENV !== 'production') {\n  useLogger = require('./useLogger').useLogger;\n  useReduxDevToolsExtension = require('./useReduxDevToolsExtension').useReduxDevToolsExtension;\n} else {\n  useLogger = noop;\n  useReduxDevToolsExtension = noop;\n}": "useLogger = noop;\nuseReduxDevToolsExtension = noop;"
+          }
         }
       }
     }
