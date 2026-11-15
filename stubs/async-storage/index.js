@@ -1,63 +1,37 @@
-const PREFIX = '@AsyncStorage:';
+// AsyncStorage for web: kept in IndexedDB.
+import {storage} from 'bw-web/storage.js';
+
+const store = storage('@AsyncStorage:');
 
 const AsyncStorage = {
-  getItem: async(key)=>{
-    try { return localStorage.getItem(PREFIX+key); }
-    catch(e){ return null; }
-  },
-  setItem: async(key, value)=>{
-    try { localStorage.setItem(PREFIX+key, value); }
-    catch(e){}
-  },
-  removeItem: async(key)=>{
-    try { localStorage.removeItem(PREFIX+key); }
-    catch(e){}
-  },
+  getItem: key=>store.get(key),
+  setItem: (key, value)=>store.set(key, value),
+  removeItem: key=>store.remove(key),
   mergeItem: async(key, value)=>{
-    try {
-      let existing = localStorage.getItem(PREFIX+key);
-      if (existing){
-        let merged = {...JSON.parse(existing), ...JSON.parse(value)};
-        localStorage.setItem(PREFIX+key, JSON.stringify(merged));
-      } else {
-        localStorage.setItem(PREFIX+key, value);
-      }
-    } catch(e){}
+    let existing = await store.get(key);
+    if (existing)
+      value = JSON.stringify({...JSON.parse(existing), ...JSON.parse(value)});
+    await store.set(key, value);
   },
-  clear: async()=>{
-    try {
-      let keys = [];
-      for (let i=0; i<localStorage.length; i++){
-        let k = localStorage.key(i);
-        if (k && k.startsWith(PREFIX))
-          keys.push(k);
-      }
-      keys.forEach(k=>localStorage.removeItem(k));
-    } catch(e){}
+  clear: ()=>store.clear(),
+  getAllKeys: ()=>store.keys(),
+  multiGet: async keys=>{
+    let res = [];
+    for (let key of keys)
+      res.push([key, await store.get(key)]);
+    return res;
   },
-  getAllKeys: async()=>{
-    try {
-      let keys = [];
-      for (let i=0; i<localStorage.length; i++){
-        let k = localStorage.key(i);
-        if (k && k.startsWith(PREFIX))
-          keys.push(k.slice(PREFIX.length));
-      }
-      return keys;
-    } catch(e){ return []; }
+  multiSet: async pairs=>{
+    for (let [key, value] of pairs)
+      await store.set(key, value);
   },
-  multiGet: async(keys)=>{
-    return keys.map(k=>[k, localStorage.getItem(PREFIX+k)]);
+  multiRemove: async keys=>{
+    for (let key of keys)
+      await store.remove(key);
   },
-  multiSet: async(pairs)=>{
-    pairs.forEach(([k, v])=>localStorage.setItem(PREFIX+k, v));
-  },
-  multiRemove: async(keys)=>{
-    keys.forEach(k=>localStorage.removeItem(PREFIX+k));
-  },
-  multiMerge: async(pairs)=>{
-    for (let [k, v] of pairs)
-      await AsyncStorage.mergeItem(k, v);
+  multiMerge: async pairs=>{
+    for (let [key, value] of pairs)
+      await AsyncStorage.mergeItem(key, value);
   },
 };
 

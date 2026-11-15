@@ -1,4 +1,4 @@
-// react-native-secure-key-store for web: kept in localStorage. A browser
+// react-native-secure-key-store for web: kept in IndexedDB. A browser
 // has no OS keychain, so this is no more protected than AsyncStorage.
 import {storage} from 'bw-web/storage.js';
 
@@ -13,13 +13,13 @@ export const ACCESSIBLE = {
 };
 const store = storage('@SecureKeyStore:');
 export default {
-  set: async(key, value)=>store.set(key, value),
+  set: (key, value)=>store.set(key, value),
   // the native module rejects when the key does not exist
   get: async key=>{
-    let value = store.get(key);
+    let value = await store.get(key);
     if (value==null)
       throw Error('key not found: '+key);
     return value;
   },
-  remove: async key=>store.remove(key),
+  remove: key=>store.remove(key),
 };

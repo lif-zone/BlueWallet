@@ -1,4 +1,4 @@
-// react-native-keychain for web: kept in localStorage. A browser has no OS
+// react-native-keychain for web: kept in IndexedDB. A browser has no OS
 // keychain, so this is no more protected than AsyncStorage.
 import {storage} from 'bw-web/storage.js';
 
@@ -8,20 +8,20 @@ const service_get = options=>
 
 export async function setGenericPassword(username, password, options){
   let service = service_get(options);
-  store.set(service, JSON.stringify({username, password}));
-  return {service, storage: 'localStorage'};
+  await store.set(service, JSON.stringify({username, password}));
+  return {service, storage: 'IndexedDB'};
 }
 
 export async function getGenericPassword(options){
   let service = service_get(options);
-  let value = store.get(service);
+  let value = await store.get(service);
   if (!value)
     return false;
-  return {service, storage: 'localStorage', ...JSON.parse(value)};
+  return {service, storage: 'IndexedDB', ...JSON.parse(value)};
 }
 
 export async function resetGenericPassword(options){
-  store.remove(service_get(options));
+  await store.remove(service_get(options));
   return true;
 }
 
