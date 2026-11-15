@@ -7,4 +7,5 @@ were not exercised yet.
 
 ## Open Tasks
 
-(none)
+- web/img_sizes.json is generated: re-run `node web/img_sizes_gen.mjs` when
+  images under img/ are added or resized (a missing entry shows at 0x0).

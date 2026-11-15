@@ -33,7 +33,7 @@ export function createIconSet(config){
       return React.createElement('span', {ref,
         style: {fontFamily: config.fontFamily, fontSize: size, color,
           fontStyle: 'normal', fontWeight: 'normal', lineHeight: 1, ...s},
-        ...props}, code ? String.fromCodePoint(code) : name);
+        ...props}, code ? String.fromCodePoint(code) : '');
     }
     return React.createElement('span', {ref,
       style: {fontSize: size, color, ...s, lineHeight: 1}, ...props}, name);

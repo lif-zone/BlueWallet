@@ -357,7 +357,8 @@ export const serverFeatures = async function() {
 
 export const getConfig = async function() {
   return {
-    connected: isConnected(),
+    // 1/0, not a boolean: screens compare it with === 1
+    connected: isConnected() ? 1 : 0,
     host: location.host,
     port: 0,
   };
@@ -367,8 +368,101 @@ export const getSecondsSinceLastRequest = function() {
   return Math.floor((Date.now()-_lastRequest)/1000);
 };
 
+// last block tip seen from the server
+let _tip = {height: 0, time: 0};
+
+// same estimate as BlueWallet: from a known block and the average block time
 export function estimateCurrentBlockheight(): number {
-  return 0;
+  if (_tip.height){
+    const timeDiff = Math.floor(+new Date() / 1000) - _tip.time;
+    return _tip.height + Math.floor(timeDiff / (9.93 * 60));
+  }
+  const baseTs = 1587570465609; // uS
+  const baseHeight = 627179;
+  return Math.floor(baseHeight + (+new Date() - baseTs) / 1000 / 60 / 9.93);
+}
+
+export async function getServerBanner(): Promise<string> {
+  try {
+    return (await _call('server.banner', [])) || '';
+  } catch(e){
+    return '';
+  }
+}
+
+// closes the connection. the next request connects again
+export const forceDisconnect = (): void=>{
+  let rpc = _rpc;
+  _rpc = null;
+  _state = 'disconnected';
+  _notify();
+  try {
+    rpc?.close?.();
+  } catch(e){}
+};
+
+// the web port reaches Electrum through lif-net only: it cannot open a
+// connection to an arbitrary host:port, so a custom server cannot be tested
+export const testConnection = async function(host: string, tcpPort?: number,
+  sslPort?: number): Promise<boolean>
+{
+  return false;
+};
+
+export const setBatchingDisabled = ()=>{};
+export const setBatchingEnabled = ()=>{};
+
+const TIP_CACHE_TTL_SEC = 60;
+export async function getCurrentBlockTip(): Promise<number> {
+  let now = Math.floor(Date.now()/1000);
+  if (_tip.height && now-_tip.time<TIP_CACHE_TTL_SEC)
+    return _tip.height;
+  try {
+    let header = await _call('blockchain.headers.subscribe', []);
+    if (header?.height){
+      _tip = {height: header.height, time: now};
+      return header.height;
+    }
+  } catch(e){
+    console.warn('getCurrentBlockTip failed', e);
+  }
+  return _tip.height || estimateCurrentBlockheight();
+}
+
+// height of the block a transaction confirmed in, with the tip it was
+// computed from: height = tip - confirmations + 1. null when unconfirmed
+export async function getConfirmedBlockHeight(txHash: string):
+  Promise<ConfirmedBlockInfo|null>
+{
+  let tip = await getCurrentBlockTip();
+  let tx;
+  try {
+    tx = await _call('blockchain.transaction.get', [txHash, true]);
+  } catch(e){
+    return null;
+  }
+  if (!tx?.confirmations || tx.confirmations<=0)
+    return null;
+  return {height: tip-tx.confirmations+1, tip};
+}
+
+// block timestamps, from the 80 byte block headers: the timestamp is the
+// little-endian uint32 at byte 68
+export async function getBlockTimestamps(heights: number[]):
+  Promise<Record<number, number>>
+{
+  let result: Record<number, number> = {};
+  for (let height of heights){
+    try {
+      let header: string = await _call('blockchain.block.header', [height]);
+      let ts = header.slice(136, 144);
+      result[height] = parseInt(ts.slice(6, 8)+ts.slice(4, 6)+ts.slice(2, 4)
+        +ts.slice(0, 2), 16);
+    } catch(e){
+      console.warn('Failed to fetch block header for height '+height, e);
+    }
+  }
+  return result;
 }
 
 export const calculateBlockTime = function(height: number): number {

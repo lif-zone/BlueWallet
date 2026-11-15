@@ -6,6 +6,11 @@ create_stub() {
   local name=$1
   local code=$2
   local dir=$(echo "$name" | sed 's/@//;s/\//-/g')
+  # never overwrite: several stubs were replaced by hand-written
+  # implementations
+  if [ -f "$dir/index.js" ]; then
+    return
+  fi
   mkdir -p "$dir"
   echo "{\"name\":\"$name\",\"version\":\"0.0.0\",\"main\":\"index.js\"}" > "$dir/package.json"
   echo "$code" > "$dir/index.js"

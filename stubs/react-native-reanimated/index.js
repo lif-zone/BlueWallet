@@ -1,70 +1,289 @@
-
-import React from 'react';
+// react-native-reanimated for web: a small JS implementation of the parts
+// BlueWallet uses. Shared values animate with requestAnimationFrame
+// (withTiming, withDelay, withSequence, withSpring, withRepeat), and
+// useAnimatedStyle re-renders its component while they change.
+// Layout animations (entering, exiting, layout props) are ignored.
+import React, {useEffect, useRef, useState} from 'react';
 import {View, Text, ScrollView, Image, FlatList} from 'react-native';
-function _strip({entering, exiting, layout, sharedTransitionTag, sharedTransitionStyle, animatedProps, ...rest}){
+
+// change notification: every hook that reads shared values listens here
+let listeners = new Set();
+let flush_pending;
+function notify(){
+  if (flush_pending)
+    return;
+  flush_pending = true;
+  requestAnimationFrame(()=>{
+    flush_pending = false;
+    for (let listener of [...listeners])
+      listener();
+  });
+}
+
+// animation descriptors
+const is_anim = v=>v && typeof v=='object' && v.__anim;
+export const withTiming = (to, config, callback)=>({__anim: 'timing', to,
+  duration: config?.duration ?? 300, easing: config?.easing||Easing.inOut(
+  Easing.quad), callback});
+export const withSpring = (to, config, callback)=>({__anim: 'timing', to,
+  duration: config?.duration ?? 350, easing: Easing.out(Easing.cubic),
+  callback});
+export const withDelay = (ms, anim)=>({__anim: 'delay', ms, anim});
+export const withSequence = (...anims)=>({__anim: 'sequence', anims});
+export const withRepeat = (anim, count=2, reverse=false, callback)=>
+  ({__anim: 'repeat', anim, count, reverse, callback});
+
+// runs an animation on a shared value. returns a function that cancels it
+function anim_run(sv, anim, done){
+  let cancelled, cancel_child, raf, timer;
+  let cancel = ()=>{
+    cancelled = true;
+    cancelAnimationFrame(raf);
+    clearTimeout(timer);
+    cancel_child?.();
+  };
+  if (!is_anim(anim)){
+    sv._set(anim);
+    done?.(true);
+    return cancel;
+  }
+  if (anim.__anim=='delay'){
+    timer = setTimeout(()=>{
+      cancel_child = anim_run(sv, anim.anim, done);
+    }, anim.ms);
+  } else if (anim.__anim=='sequence'){
+    let i = 0;
+    let next = finished=>{
+      if (cancelled || !finished || i>=anim.anims.length)
+        return done?.(finished);
+      cancel_child = anim_run(sv, anim.anims[i++], next);
+    };
+    next(true);
+  } else if (anim.__anim=='repeat'){
+    let i = 0;
+    let from = sv._v;
+    let next = finished=>{
+      if (cancelled || !finished || anim.count>0 && i>=anim.count){
+        anim.callback?.(finished);
+        return done?.(finished);
+      }
+      let a = anim.anim;
+      if (anim.reverse && i%2 && a.__anim=='timing')
+        a = {...a, to: from};
+      else if (!anim.reverse && i)
+        sv._set(from);
+      i++;
+      cancel_child = anim_run(sv, a, next);
+    };
+    next(true);
+  } else {
+    let from = sv._v, to = anim.to;
+    let start = performance.now();
+    let end = finished=>{
+      anim.callback?.(finished);
+      done?.(finished);
+    };
+    if (typeof from!='number' || typeof to!='number' || !anim.duration){
+      sv._set(to);
+      end(true);
+      return cancel;
+    }
+    let step = now=>{
+      if (cancelled)
+        return;
+      let t = Math.min(1, (now-start)/anim.duration);
+      sv._set(from+(to-from)*anim.easing(t));
+      if (t<1)
+        raf = requestAnimationFrame(step);
+      else
+        end(true);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  return cancel;
+}
+
+function shared_value(init){
+  let sv = {
+    _v: init,
+    _cancel: null,
+    _set(v){
+      if (sv._v===v)
+        return;
+      sv._v = v;
+      notify();
+    },
+    get value(){
+      return sv._v;
+    },
+    set value(v){
+      sv._cancel?.();
+      sv._cancel = anim_run(sv, v);
+    },
+    get: ()=>sv._v,
+    set: v=>sv.value = typeof v=='function' ? v(sv._v) : v,
+  };
+  return sv;
+}
+
+export const makeMutable = shared_value;
+export function useSharedValue(init){
+  let ref = useRef(null);
+  ref.current ||= shared_value(init);
+  useEffect(()=>()=>ref.current._cancel?.(), []);
+  return ref.current;
+}
+
+export function cancelAnimation(sv){
+  sv?._cancel?.();
+}
+
+// re-render the component when a shared value changes
+function use_shared_changes(){
+  let [, set_tick] = useState(0);
+  useEffect(()=>{
+    let listener = ()=>set_tick(tick=>tick+1);
+    listeners.add(listener);
+    return ()=>listeners.delete(listener);
+  }, []);
+}
+
+export function useAnimatedStyle(fn){
+  use_shared_changes();
+  return fn();
+}
+
+export function useDerivedValue(fn){
+  use_shared_changes();
+  return {value: fn()};
+}
+
+export function useAnimatedReaction(prepare, react){
+  let prev = useRef(null);
+  let fns = useRef(null);
+  fns.current = {prepare, react};
+  useEffect(()=>{
+    let listener = ()=>{
+      let cur = fns.current.prepare();
+      if (cur===prev.current)
+        return;
+      let _prev = prev.current;
+      prev.current = cur;
+      fns.current.react(cur, _prev);
+    };
+    listener();
+    listeners.add(listener);
+    return ()=>listeners.delete(listener);
+  }, []);
+}
+
+export const Extrapolation = {CLAMP: 'clamp', EXTEND: 'extend',
+  IDENTITY: 'identity'};
+export function interpolate(v, input, output, type){
+  let left = type?.extrapolateLeft||type||'extend';
+  let right = type?.extrapolateRight||type||'extend';
+  let i = 1;
+  while (i<input.length-1 && v>input[i])
+    i++;
+  let x0 = input[i-1], x1 = input[i], y0 = output[i-1], y1 = output[i];
+  if (v<input[0] && left=='clamp')
+    return output[0];
+  if (v<input[0] && left=='identity')
+    return v;
+  if (v>input.at(-1) && right=='clamp')
+    return output.at(-1);
+  if (v>input.at(-1) && right=='identity')
+    return v;
+  if (x1==x0)
+    return y0;
+  return y0+(y1-y0)*(v-x0)/(x1-x0);
+}
+
+const ease = {
+  linear: t=>t,
+  quad: t=>t*t,
+  cubic: t=>t*t*t,
+  sin: t=>1-Math.cos(t*Math.PI/2),
+  circle: t=>1-Math.sqrt(1-t*t),
+  exp: t=>Math.pow(2, 10*(t-1)),
+};
+export const Easing = {
+  ...ease,
+  ease: t=>t*t*(3-2*t),
+  poly: n=>t=>Math.pow(t, n),
+  elastic: ()=>ease.quad,
+  back: ()=>ease.quad,
+  bounce: ease.quad,
+  bezier: ()=>t=>t*t*(3-2*t),
+  bezierFn: ()=>t=>t*t*(3-2*t),
+  in: fn=>fn,
+  out: fn=>t=>1-fn(1-t),
+  inOut: fn=>t=>t<0.5 ? fn(t*2)/2 : 1-fn((1-t)*2)/2,
+};
+
+// layout animation props are not supported: drop them
+function strip({entering, exiting, layout, sharedTransitionTag,
+  sharedTransitionStyle, animatedProps, ...rest})
+{
   return rest;
 }
+const animated = comp=>React.forwardRef((props, ref)=>
+  React.createElement(comp, {...strip(props), ref}));
 const Animated = {
-  View: React.forwardRef((props,ref)=>React.createElement(View, {..._strip(props),ref})),
-  Text: React.forwardRef((props,ref)=>React.createElement(Text, {..._strip(props),ref})),
-  ScrollView: React.forwardRef((props,ref)=>React.createElement(ScrollView, {..._strip(props),ref})),
-  Image: React.forwardRef((props,ref)=>React.createElement(Image, {..._strip(props),ref})),
-  FlatList: React.forwardRef((props,ref)=>React.createElement(FlatList, {..._strip(props),ref})),
-  createAnimatedComponent: (comp)=>React.forwardRef((props,ref)=>React.createElement(comp, {..._strip(props),ref})),
+  View: animated(View),
+  Text: animated(Text),
+  ScrollView: animated(ScrollView),
+  Image: animated(Image),
+  FlatList: animated(FlatList),
+  createAnimatedComponent: animated,
 };
 export default Animated;
-export const useSharedValue = (v)=>({value:v});
-export const useAnimatedStyle = (fn)=>fn();
-export const withTiming = (v)=>v;
-export const withDelay = (_,v)=>v;
-export const withSpring = (v)=>v;
-export const withRepeat = (v)=>v;
-export const withSequence = (...args)=>args[args.length-1];
-function _chain(){
+
+// builders for layout animations: accepted and ignored
+function chain(){
   let o = {};
-  o.duration = ()=>o;
-  o.easing = ()=>o;
-  o.delay = ()=>o;
-  o.springify = ()=>o;
-  o.damping = ()=>o;
-  o.mass = ()=>o;
-  o.stiffness = ()=>o;
-  o.overshootClamping = ()=>o;
-  o.restDisplacementThreshold = ()=>o;
-  o.restSpeedThreshold = ()=>o;
-  o.withInitialValues = ()=>o;
-  o.withCallback = ()=>o;
-  o.build = ()=>o;
+  for (let name of ['duration', 'easing', 'delay', 'springify', 'damping',
+    'mass', 'stiffness', 'overshootClamping', 'restDisplacementThreshold',
+    'restSpeedThreshold', 'withInitialValues', 'withCallback', 'build',
+    'reduceMotion', 'randomDelay'])
+  {
+    o[name] = ()=>o;
+  }
   return o;
 }
-const _ef = v=>v;
-export const Easing = {linear:_ef, ease:_ef, quad:_ef, cubic:_ef, poly:()=>_ef,
-  sin:_ef, circle:_ef, exp:_ef, elastic:()=>_ef, back:()=>_ef, bounce:_ef,
-  bezier:()=>_ef, in:()=>_ef, out:()=>_ef, inOut:()=>_ef};
-export const Layout = _chain();
-export const FadeIn = _chain();
-export const FadeOut = _chain();
-export const SlideInRight = _chain();
-export const SlideOutRight = _chain();
-export const SlideInLeft = _chain();
-export const SlideOutLeft = _chain();
-export const ZoomIn = _chain();
-export const ZoomOut = _chain();
-export const runOnJS = (fn)=>fn;
-export const runOnUI = (fn)=>fn;
-export const useAnimatedRef = ()=>React.createRef();
-export const measure = ()=>({});
-export const scrollTo = ()=>{};
-export const cancelAnimation = ()=>{};
-export const makeMutable = (v)=>({value:v});
-export const interpolate = (v)=>v;
-export const Extrapolation = {CLAMP:'clamp',EXTEND:'extend'};
-export const useAnimatedScrollHandler = ()=>({});
-export const LinearTransition = _chain();
-export const FadingTransition = _chain();
-export const SequencedTransition = _chain();
-export const JumpingTransition = _chain();
-export const useAnimatedReaction = ()=>{};
-export const useAnimatedKeyboard = ()=>({state:{value:0},height:{value:0}});
-export const KeyboardState = {CLOSED:0,OPEN:1,CLOSING:2,OPENING:3};
+export const Layout = chain();
+export const FadeIn = chain();
+export const FadeOut = chain();
+export const FadeInDown = chain();
+export const FadeInUp = chain();
+export const FadeOutDown = chain();
+export const FadeOutUp = chain();
+export const SlideInRight = chain();
+export const SlideOutRight = chain();
+export const SlideInLeft = chain();
+export const SlideOutLeft = chain();
+export const ZoomIn = chain();
+export const ZoomOut = chain();
+export const LinearTransition = chain();
+export const FadingTransition = chain();
+export const SequencedTransition = chain();
+export const JumpingTransition = chain();
 
+export const runOnJS = fn=>fn;
+export const runOnUI = fn=>fn;
+export const useAnimatedRef = ()=>useRef(null);
+export const measure = ref=>{
+  let rect = ref?.current?.getBoundingClientRect?.();
+  if (!rect)
+    return null;
+  return {x: rect.left, y: rect.top, width: rect.width, height: rect.height,
+    pageX: rect.left, pageY: rect.top};
+};
+export const scrollTo = (ref, x, y, animated)=>
+  ref?.current?.scrollTo?.({x, y, animated});
+export const useAnimatedScrollHandler = ()=>()=>{};
+export const KeyboardState = {UNKNOWN: 0, OPENING: 1, OPEN: 2, CLOSING: 3,
+  CLOSED: 4};
+export const useAnimatedKeyboard = ()=>({state: {value: KeyboardState.CLOSED},
+  height: {value: 0}});
+export const useReducedMotion = ()=>false;

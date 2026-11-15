@@ -13,9 +13,9 @@ html_elm_frag_append(document.head, `
   <link rel=stylesheet href='https://cdnjs.cloudflare.com/ajax/libs/MaterialDesign-Webfont/7.4.47/css/materialdesignicons.min.css' />
   <style>
     @font-face { font-family: 'Ionicons'; font-style: normal; font-weight: 400;
-      src: url('https://cdn.jsdelivr.net/npm/@react-native-vector-icons/ionicons@14.0.0/fonts/Ionicons.ttf') format('truetype'); }
+      src: url('https://cdn.jsdelivr.net/npm/@react-native-vector-icons/ionicons@13.1.5/fonts/Ionicons.ttf') format('truetype'); }
     @font-face { font-family: 'Entypo'; font-style: normal; font-weight: 400;
-      src: url('https://cdn.jsdelivr.net/npm/@react-native-vector-icons/entypo@14.0.0/fonts/Entypo.ttf') format('truetype'); }
+      src: url('https://cdn.jsdelivr.net/npm/@react-native-vector-icons/entypo@13.1.5/fonts/Entypo.ttf') format('truetype'); }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
