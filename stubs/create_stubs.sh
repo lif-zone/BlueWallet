@@ -282,10 +282,8 @@ create_stub "react-native-capture-protection" "
 export default {allow:()=>{},prevent:()=>{},addEventListener:()=>({remove:()=>{}})};
 "
 
-create_stub "react-native-context-menu-view" "
-import React from 'react';
-export default function ContextMenuView({children,...props}){return React.createElement('div',props,children);}
-"
+# react-native-context-menu-view: real implementation, written by hand in
+# react-native-context-menu-view/index.js (not generated here)
 
 create_stub "react-native-blue-crypto" "
 export default {scrypt:async()=>new Uint8Array(32)};
