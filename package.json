@@ -78,7 +78,7 @@
       "react-native-web": {
         "./dist/index.js": {
           "replace_line": {
-            "export { default as useWindowDimensions } from './exports/useWindowDimensions';": "export { default as useWindowDimensions } from './exports/useWindowDimensions';\nexport function codegenNativeComponent(name){ return (props)=>null; }\nexport function PlatformColor(){ return undefined; }"
+            "export { default as useWindowDimensions } from './exports/useWindowDimensions';": "export { default as useWindowDimensions } from './exports/useWindowDimensions';\nexport function codegenNativeComponent(name){ return (props)=>null; }\nexport function PlatformColor(){ return undefined; }\nexport {ToastAndroid} from 'bw-web/toast.js';"
           }
         },
         "./dist/exports/BackHandler/index.js": {

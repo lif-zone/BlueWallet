@@ -1,7 +1,9 @@
 // react-native-share for web. A file or an image is saved as a download
 // (or handed to the system share sheet where the browser has one). A text
-// message goes to the share sheet, or to the clipboard.
+// message goes to the share sheet, or to the clipboard (with a short popup
+// telling so).
 import {vfs_read, download} from 'bw-web/vfs.js';
+import {toast_show} from 'bw-web/toast.js';
 
 const extensions = {'image/png': '.png', 'image/jpeg': '.jpg',
   'text/plain': '.txt', 'application/json': '.json', 'text/csv': '.csv',
@@ -32,8 +34,10 @@ const Share = {
       if (!urls.length && options.message){
         if (navigator.share)
           await navigator.share({title: options.title, text: options.message});
-        else
+        else {
           await navigator.clipboard.writeText(options.message);
+          toast_show('Copied to clipboard');
+        }
       }
     } catch(e){
       // closing the share sheet is not an error, unless asked for

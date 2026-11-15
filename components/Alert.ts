@@ -1,5 +1,4 @@
-import { Alert as RNAlert, Platform, AlertButton, AlertOptions } from 'react-native';
-const ToastAndroid = {show: ()=>{}, SHORT: 0, LONG: 1};
+import { Alert as RNAlert, Platform, ToastAndroid, AlertButton, AlertOptions } from 'react-native';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../blue_modules/hapticFeedback';
 import loc from '../loc';
 import { navigationRef } from '../NavigationService';
