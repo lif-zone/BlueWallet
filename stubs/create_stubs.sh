@@ -275,9 +275,8 @@ create_stub "react-native-handoff" "
 export default {updateActivity:()=>{},clearActivity:()=>{}};
 "
 
-create_stub "react-native-prompt-android" "
-export default ()=>{};
-"
+# react-native-prompt-android: real implementation, written by hand in
+# react-native-prompt-android/index.js (not generated here)
 
 create_stub "react-native-capture-protection" "
 export default {allow:()=>{},prevent:()=>{},addEventListener:()=>({remove:()=>{}})};
