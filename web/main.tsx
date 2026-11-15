@@ -63,6 +63,23 @@ _root.id = 'root';
 let root = createRoot(_root);
 root.render(<LoadingApp />);
 
+// modules that BlueWallet loads with require() inside ES modules
+async function require_init(){
+  let req: any = (globalThis as any).require;
+  // class/wallets/legacy-wallet.ts: late load, circular import
+  req.register('./hd-segwit-bech32-wallet',
+    await import('../class/wallets/hd-segwit-bech32-wallet.ts'));
+  // screen/settings/ReleaseNotes.tsx: build output, may not exist
+  let notes = '';
+  try {
+    notes = (await import('../release-notes.json', {with: {type: 'json'}}))
+      .default;
+  } catch(e){
+    console.warn('release-notes.json not found');
+  }
+  req.register('../../release-notes', notes);
+}
+
 (async()=>{
   let last: number|null = null;
   let diff = 0;
@@ -80,6 +97,7 @@ root.render(<LoadingApp />);
   }, 200);
   try {
     let {default: App} = await import('../App.tsx');
+    await require_init();
     clearInterval(iv);
     root.render(<ErrorBoundary><App /></ErrorBoundary>);
   } catch(e){
