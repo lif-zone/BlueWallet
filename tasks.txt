@@ -7,10 +7,7 @@ were not exercised yet.
 
 ## Open Tasks
 
-### 1. Search for other .png/.jpg image imports in npm deps
-@react-navigation/elements and drawer are patched (lif.patch in package.json).
-Other npm packages may also import image, SVG or font files; none seen so far
-on app load.
+(none)
 
 ## lif-kernel Bugs / Limitations
 
