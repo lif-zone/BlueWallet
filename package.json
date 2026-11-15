@@ -82,12 +82,12 @@
         },
         "./dist/exports/BackHandler/index.js": {
           "replace_line": {
-            "console.error('BackHandler is not supported on web and should not be used.');": ""
+            "export default BackHandler;": "export {default} from 'bw-web/back_handler.js';"
           }
         },
         "./dist/exports/Alert/index.js": {
           "replace_line": {
-            "static alert() {}": "static alert(title, message, buttons){\n    if (!buttons || !buttons.length){\n      window.alert(message||title);\n      return;\n    }\n    if (buttons.length==1){\n      window.alert((title?title+'\\n\\n':'')+(message||''));\n      buttons[0].onPress?.();\n      return;\n    }\n    let msg = (title?title+'\\n\\n':'')+(message||'');\n    if (window.confirm(msg)){\n      let btn = buttons.find(b=>b.style=='default')||buttons.find(b=>b.style!='cancel')||buttons[0];\n      btn.onPress?.();\n    } else {\n      let cb = buttons.find(b=>b.style=='cancel');\n      if (cb) cb.onPress?.();\n    }\n  }"
+            "export default Alert;": "export {default} from 'bw-web/alert.js';"
           }
         }
       },
@@ -145,6 +145,7 @@
     "bolt11": "1.4.2",
     "bs58check": "4.0.0",
     "buffer": "6.0.3",
+    "bw-web": "file:./web",
     "coinselect": "github:BlueWallet/coinselect#0040134",
     "crypto": "file:./stubs/crypto//",
     "crypto-browserify": "3.12.1",
