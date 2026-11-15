@@ -1,7 +1,9 @@
+import {version} from 'bw-web/app_info.js';
+
 export const getUniqueId = async()=>'web-device';
 export const getDeviceType = ()=>'Desktop';
 export const isTablet = ()=>false;
-export const getVersion = ()=>'0.0.0';
+export const getVersion = ()=>version;
 export const getBundleId = ()=>'io.bluewallet.bluewallet';
 export const isEmulator = async()=>false;
 export const getApplicationName = ()=>'BlueWallet';
