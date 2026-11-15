@@ -17,8 +17,7 @@ import { useTheme } from '../../components/themes';
 import { useSettings } from '../../hooks/context/useSettings';
 import loc, { formatStringAddTwoWhiteSpaces } from '../../loc';
 import { errorMessage } from '../../helpers/errorMessage';
-
-const branch = require('../../current-branch.json');
+import branch from '../../current-branch.json' with {type: 'json'};
 
 const About: React.FC = () => {
   const { navigate } = useNavigation();

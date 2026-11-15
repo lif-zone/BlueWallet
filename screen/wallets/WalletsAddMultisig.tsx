@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { BlueSpacing20 } from '../../components/BlueSpacing';
 import { resetScanWasBBQR } from '../../helpers/scan-qr.ts';
+import msvaultAnimation from '../../img/msvault.json' with {type: 'json'};
 
 type NavigationProps = NativeStackNavigationProp<AddWalletStackParamList, 'WalletsAddMultisig'>;
 type RouteProps = RouteProp<AddWalletStackParamList, 'WalletsAddMultisig'>;
@@ -101,7 +102,7 @@ const WalletsAddMultisig: React.FC = () => {
     <SafeArea style={stylesHook.root}>
       <View style={styles.descriptionContainer}>
         <View style={styles.imageWrapper}>
-          <LottieView source={require('../../img/msvault.json')} style={styles.lottie} autoPlay loop={false} />
+          <LottieView source={msvaultAnimation} style={styles.lottie} autoPlay loop={false} />
         </View>
         <BlueSpacing20 />
         <Text style={[styles.textdesc, stylesHook.textdesc]}>

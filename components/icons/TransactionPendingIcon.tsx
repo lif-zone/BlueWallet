@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import LottieView from 'lottie-react-native';
 
 import { useTheme } from '../themes';
+import pendingAnimation from '../../img/pending.json' with {type: 'json'};
 
 const styles = StyleSheet.create({
   boxIncoming: {
@@ -31,8 +32,6 @@ const TransactionPendingIcon: React.FC = () => {
       backgroundColor: colors.transactionPendingIconBackground,
     },
   });
-
-  const pendingAnimation = require('../../img/pending.json');
 
   return (
     <View style={styles.boxIncoming}>

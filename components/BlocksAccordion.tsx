@@ -21,6 +21,7 @@ import { useTheme } from './themes';
 import * as BlueElectrum from '../blue_modules/BlueElectrum';
 import loc, { formatBalanceWithoutSuffix } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
+import txblockAnimation from '../img/txblock.json' with {type: 'json'};
 
 const BLOCK_COUNT = 5;
 const COLLAPSED_HEIGHT = 0;
@@ -34,7 +35,6 @@ const BLOCK_CARD_GAP = 8;
 const ITEM_LENGTH = BLOCK_CARD_WIDTH + BLOCK_CARD_GAP;
 const HORIZONTAL_PADDING = 8;
 const STATE_CARD_MARGIN_H = 24;
-const txblockAnimation = require('../img/txblock.json');
 const BLOCK_GRADIENT_EDGE_OPACITY = 0.45;
 const BLOCK_GRADIENT_TOP_START = { x: 0.5, y: 0 };
 const BLOCK_GRADIENT_TOP_END = { x: 0.5, y: 1 };
