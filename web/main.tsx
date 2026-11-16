@@ -12,9 +12,16 @@ import 'dayjs';
 import {texts as toast_texts} from './toast.js';
 declare const $lif: any;
 
+// the BlueWallet application icon (the Android launcher icon), in place of
+// the icon of the page that loaded us
+for (let link of document.querySelectorAll('link[rel~=icon]'))
+  link.remove();
+const icon_url = import.meta.resolve(
+  '../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png');
+
 html_elm_frag_append(document.head, `
   <meta name=viewport content='width=device-width, initial-scale=1' />
-  <link rel=icon href='lif-kernel/favicon.ico' />
+  <link rel=icon type=image/png sizes=192x192 href='${icon_url}' />
   <link rel=stylesheet href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css' />
   <link rel=stylesheet href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css' />
   <link rel=stylesheet href='https://fonts.googleapis.com/icon?family=Material+Icons' />
