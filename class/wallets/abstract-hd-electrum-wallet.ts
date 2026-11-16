@@ -1,5 +1,5 @@
 /* eslint react/prop-types: "off", @typescript-eslint/ban-ts-comment: "off", camelcase: "off"   */
-import BIP47Factory, { BIP47Interface } from 'bip47';
+import BIP47Factory, { BIP47Interface } from '@spsina/bip47';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import BIP32Factory, { BIP32Interface } from 'bip32';
@@ -16,12 +16,14 @@ import { hexToUint8Array, uint8ArrayToHex } from '../../blue_modules/uint8array-
 import { randomBytes } from '../rng';
 import { AbstractHDWallet } from './abstract-hd-wallet';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types';
+import { SPFactory, UTXOType as SPUTXOType, UTXO as SPUTXO } from 'silent-payments';
 import { isValidBech32Address } from '../../util/isValidBech32Address.ts';
 import loc from '../../loc';
 
 const ECPair = ECPairFactory(ecc);
 const bip32 = BIP32Factory(ecc);
 const bip47 = BIP47Factory(ecc);
+const SilentPayment = SPFactory(ecc);
 
 type BalanceByIndex = {
   c: number;
@@ -1044,7 +1046,33 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
 
     const hasSilentPaymentOutput: boolean = !!outputs.find(o => o.address?.toLowerCase().startsWith('sp1'));
     if (hasSilentPaymentOutput) {
-      throw new Error('Silent payments not supported in web version');
+      if (!this.allowSilentPaymentSend()) {
+        throw new Error('This wallet can not send to SilentPayment address');
+      }
+
+      // for a single wallet all utxos gona be the same type, so we define it only once:
+      let utxoType: SPUTXOType = 'non-eligible';
+      switch (this.segwitType) {
+        case 'p2tr':
+          utxoType = 'p2tr';
+          break;
+        case 'p2sh(p2wpkh)':
+          utxoType = 'p2sh-p2wpkh';
+          break;
+        case 'p2wpkh':
+          utxoType = 'p2wpkh';
+          break;
+        default:
+          // @ts-ignore override
+          if (this.type === 'HDlegacyP2PKH') utxoType = 'p2pkh';
+      }
+
+      const spUtxos: SPUTXO[] = inputs.map(u => {
+        if (!u.wif) throw new Error(loc.send.silentpayment_no_wif);
+        return { ...u, utxoType, wif: u.wif };
+      });
+      const sp = new SilentPayment();
+      outputs = sp.createTransaction(spUtxos, outputs) as CoinSelectOutput[];
     }
 
     sequence = sequence || AbstractHDElectrumWallet.defaultRBFSequence;
