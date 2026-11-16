@@ -102,6 +102,13 @@
           }
         }
       },
+      "@react-navigation/native-stack": {
+        "./lib/module/views/NativeStackView.js": {
+          "replace_line": {
+            "}) : headerLeft === undefined && canGoBack ? ({": "}) : headerLeft === undefined && options.headerBackVisible === false ? () => null : headerLeft === undefined && canGoBack ? ({"
+          }
+        }
+      },
       "@react-navigation/devtools": {
         "./lib/module/index.js": {
           "replace_line": {
