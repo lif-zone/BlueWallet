@@ -2,6 +2,14 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import './node_env.js';
 import {html_elm_frag_append} from 'lif-kernel/util';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getLocales} from 'react-native-localize';
+import {resolveLangCodeFromRnLocales} from '../loc/resolveDeviceLangCode';
+import loc_requires from './loc_requires.json' with {type: 'json'};
+// a dayjs locale file registers itself in dayjs when loaded: dayjs must be
+// loaded before the first one (loc_load)
+import 'dayjs';
+import {texts as toast_texts} from './toast.js';
 declare const $lif: any;
 
 html_elm_frag_append(document.head, `
@@ -83,6 +91,49 @@ async function require_init(){
     await import('../class/wallets/taproot-wallet.ts'));
 }
 
+// loc/index.ts loads the strings of a language (require('./xx.json')) and
+// its date locale (require('dayjs/locale/xx')) at the moment the language
+// is applied. web/loc_requires.json (web/loc_requires_gen.mjs) tells which
+// files a language needs.
+let loc_loading: Record<string, Promise<void>> = {};
+function loc_load(lang: string){
+  return loc_loading[lang] ||= (async()=>{
+    let req: any = (globalThis as any).require;
+    let json = (loc_requires.json as any)[lang];
+    let dayjs = (loc_requires.dayjs as any)[lang];
+    try {
+      if (json){
+        let res = await fetch(new URL('../loc/'+json.slice(2),
+          import.meta.url));
+        req.register(json, await res.json());
+      }
+      if (dayjs){
+        req.register(dayjs, await import(
+          new URL('../.lif.imp/'+dayjs+'?imp', import.meta.url).href));
+      }
+    } catch(e){
+      console.warn('failed loading language', lang, e);
+    }
+  })();
+}
+
+// the languages loc/index.ts may apply at start: the saved one, and the
+// ones it detects from the browser
+async function loc_init_early(){
+  let locales = getLocales();
+  let langs = new Set([await AsyncStorage.getItem('lang'),
+    resolveLangCodeFromRnLocales(locales), locales[0]?.languageCode]);
+  await Promise.all([...langs].map(lang=>lang && loc_load(lang)));
+}
+
+// the other languages, for a change of language in Settings: one by one in
+// the background. A language that is chosen before it got loaded shows in
+// English until the next start.
+async function loc_init_all(){
+  for (let lang of Object.keys(loc_requires.json))
+    await loc_load(lang);
+}
+
 // modules that are loaded with require() at the top of a module, so they
 // must be there before the application is imported
 async function require_init_early(){
@@ -112,8 +163,12 @@ async function require_init_early(){
   }, 200);
   try {
     await require_init_early();
+    await loc_init_early();
     let {default: App} = await import('../App.tsx');
     await require_init();
+    let loc = (await import('../loc/index.ts')).default;
+    toast_texts.copied = ()=>loc._.copied;
+    loc_init_all();
     clearInterval(iv);
     root.render(<ErrorBoundary><App /></ErrorBoundary>);
   } catch(e){

@@ -2,6 +2,10 @@
 // bottom of the page and goes away by itself.
 // toast_show(message, {ms})
 // Also the React Native ToastAndroid: ToastAndroid.show(message, duration)
+// texts of toasts that the stubs show. The application sets them to its
+// own translated strings (web/main.tsx)
+export const texts = {copied: ()=>'Copied to clipboard'};
+
 let style_added;
 function style_add(){
   if (style_added)

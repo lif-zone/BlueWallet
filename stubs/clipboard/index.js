@@ -1,5 +1,5 @@
 // Clipboard for web, on navigator.clipboard.
-import {toast_show} from 'bw-web/toast.js';
+import {toast_show, texts} from 'bw-web/toast.js';
 
 const Clipboard = {
   getString: async()=>{
@@ -12,7 +12,7 @@ const Clipboard = {
     try {
       await navigator.clipboard.writeText(text);
       if (text)
-        toast_show('Copied to clipboard');
+        toast_show(texts.copied());
     } catch(e){
       console.warn('clipboard write failed', e);
     }

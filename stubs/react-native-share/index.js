@@ -3,7 +3,7 @@
 // message goes to the share sheet, or to the clipboard (with a short popup
 // telling so).
 import {vfs_read, download} from 'bw-web/vfs.js';
-import {toast_show} from 'bw-web/toast.js';
+import {toast_show, texts} from 'bw-web/toast.js';
 
 const extensions = {'image/png': '.png', 'image/jpeg': '.jpg',
   'text/plain': '.txt', 'application/json': '.json', 'text/csv': '.csv',
@@ -36,7 +36,7 @@ const Share = {
           await navigator.share({title: options.title, text: options.message});
         else {
           await navigator.clipboard.writeText(options.message);
-          toast_show('Copied to clipboard');
+          toast_show(texts.copied());
         }
       }
     } catch(e){
