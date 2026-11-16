@@ -154,7 +154,7 @@
     "crypto-browserify": "3.12.1",
     "dayjs": "1.11.23",
     "ecpair": "3.0.2",
-    "electrum-client": "file:./stubs/react-native-tcp-socket//",
+    "electrum-client": "github:BlueWallet/rn-electrum-client#83420b8",
     "electrum-mnemonic": "2.0.0",
     "events": "3.3.0",
     "idb": "8.0.3",

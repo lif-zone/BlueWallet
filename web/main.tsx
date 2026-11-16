@@ -72,6 +72,27 @@ async function require_init(){
   // screen/settings/ReleaseNotes.tsx: release-notes.json is a native build
   // output, skipped on web
   req.register('../../release-notes', '');
+  // blue_modules/BlueElectrum.ts: late load, circular import
+  req.register('../class/wallets/segwit-bech32-wallet',
+    await import('../class/wallets/segwit-bech32-wallet.ts'));
+  req.register('../class/wallets/segwit-p2sh-wallet',
+    await import('../class/wallets/segwit-p2sh-wallet.ts'));
+  req.register('../class/wallets/legacy-wallet',
+    await import('../class/wallets/legacy-wallet.ts'));
+  req.register('../class/wallets/taproot-wallet',
+    await import('../class/wallets/taproot-wallet.ts'));
+}
+
+// modules that are loaded with require() at the top of a module, so they
+// must be there before the application is imported
+async function require_init_early(){
+  let req: any = (globalThis as any).require;
+  // blue_modules/BlueElectrum.ts: the electrum client, and its sockets. On
+  // React Native 'net' and 'tls' are both react-native-tcp-socket
+  let tcp_socket = (await import('react-native-tcp-socket')).default;
+  req.register('net', tcp_socket);
+  req.register('tls', tcp_socket);
+  req.register('electrum-client', (await import('electrum-client')).default);
 }
 
 (async()=>{
@@ -90,6 +111,7 @@ async function require_init(){
       txt.textContent = 'Loading… '+(all-diff);
   }, 200);
   try {
+    await require_init_early();
     let {default: App} = await import('../App.tsx');
     await require_init();
     clearInterval(iv);
