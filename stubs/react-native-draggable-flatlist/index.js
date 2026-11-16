@@ -22,6 +22,10 @@ export default function DraggableFlatList({data, renderItem, onDragBegin,
       borderTop: over==index && active!=index ? '2px solid #007aff'
         : '2px solid transparent'},
     onDragStart: event=>{
+      // cancelled by something inside the row (a sideways swipe of a
+      // Swipeable): not a reorder
+      if (event.defaultPrevented)
+        return;
       from.current = index;
       event.dataTransfer.effectAllowed = 'move';
       set_active(index);
