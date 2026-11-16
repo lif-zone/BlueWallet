@@ -81,6 +81,11 @@
             "export { default as useWindowDimensions } from './exports/useWindowDimensions';": "export { default as useWindowDimensions } from './exports/useWindowDimensions';\nexport function codegenNativeComponent(name){ return (props)=>null; }\nexport function PlatformColor(){ return undefined; }\nexport {ToastAndroid} from 'bw-web/toast.js';"
           }
         },
+        "./dist/modules/AccessibilityUtil/propsToAccessibilityComponent.js": {
+          "replace_line": {
+            "button: 'button',": "// button: a <div role=button>, not a <button> element. React Native nests buttons, HTML does not allow a <button> in a <button>"
+          }
+        },
         "./dist/exports/BackHandler/index.js": {
           "replace_line": {
             "export default BackHandler;": "export {default} from 'bw-web/back_handler.js';"
