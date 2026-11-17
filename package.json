@@ -244,6 +244,7 @@
       "@react-native-vector-icons/material-icons": "./web/stubs/react-native-vector-icons-material-icons.js",
       "@react-navigation/elements": "^2.7.0",
       "bc-bech32": "file:./blue_modules/bc-bech32//",
+      "bc-ur": "file:./blue_modules/bc-ur//",
       "bs58check": "4.0.0",
       "bw-arkade-boltz-swap": "npm:@arkade-os/boltz-swap@0.3.67",
       "bw-arkade-sdk": "npm:@arkade-os/sdk@0.4.79",
@@ -298,6 +299,21 @@
       "@arkade-os/sdk": "./web/stubs/arkade-os-sdk"
     },
     "patches": {
+      "/bluewallet/blue_modules/bc-ur//": {
+        "./dist/utils.js": {
+          "replace_line": {
+            "import { sha256 as _sha256 } from '@noble/hashes/sha256';": "const { sha256: _sha256 } = require('@noble/hashes/sha256');",
+            "const {uint8ArrayToHex} = require(\"../../uint8array-extras\");": ""
+          }
+        }
+      },
+      "/bluewallet//": {
+        "./blue_modules/ur/index.js": {
+          "replace_line": {
+            "import { decodeUR as origDecodeUr, encodeUR as origEncodeUR, extractSingleWorkload as origExtractSingleWorkload } from '../bc-ur/dist';": "import { decodeUR as origDecodeUr, encodeUR as origEncodeUR, extractSingleWorkload as origExtractSingleWorkload } from 'bc-ur/dist';"
+          }
+        }
+      },
       "github:BlueWallet/SilentPayments": {
         "./package.json": {
           "json": {
