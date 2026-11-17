@@ -21,6 +21,13 @@ were not exercised yet.
 - needs still testing
   - Finish re-testing the reworked multisig screens (creating the vault,
     co-signers, export file, multisig send and co-sign)
+  - Real camera QR scan (the test machine has no camera).
+  - Real broadcast of a transaction, including a silent-payment send
+    (tested only up to the Confirm screen).
+  - Clipboard read-back (writes are verified, the read was not possible in
+    the automated browser).
+  - The 10 other screens that hide the back arrow (need a Lightning wallet
+    or a funded multisig to reach).
 - Push web2 upstream (approach the BlueWallet team)
   - First message to them: ask to open a web2 branch for the web port.
   - Offer the two fixes branch changes: json import attributes, and the
