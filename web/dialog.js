@@ -1,5 +1,5 @@
 // HTML <dialog> popup, shared by the React Native Alert (web/alert.js) and
-// prompt (stubs/react-native-prompt-android).
+// prompt (web/stubs/react-native-prompt-android.js).
 // dialog_show({title, message, buttons, cancelable, onDismiss, input})
 // buttons: [{text, onPress, style: 'default'|'cancel'|'destructive'}]
 // input: {type, value, placeholder, inputmode} adds a text field; its value

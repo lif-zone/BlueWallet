@@ -1,1 +1,0 @@
-{"name":"@arkade-os/boltz-swap","version":"1.0.0","main":"index.js","exports":{".":"./index.js","./repositories/realm":"./repositories/realm.js"}}

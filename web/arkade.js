@@ -2,8 +2,8 @@
 // BlueWallet imports them at start, from files every start needs. On web
 // they are loaded only when needed:
 // - package.json points the two names to small facade packages
-//   (stubs/arkade-os-sdk, stubs/arkade-os-boltz-swap). A facade exports the
-//   same names as the real package, as placeholders.
+//   (web/stubs/arkade-os-sdk, web/stubs/arkade-os-boltz-swap). A facade
+//   exports the same names as the real package, as placeholders.
 // - ark_load() loads the real packages (bw-arkade-sdk, bw-arkade-boltz-swap
 //   in package.json), and the facades replace their exports by the real
 //   ones. Importers see the new values: ES module exports are live.
@@ -103,7 +103,7 @@ export function placeholder_class(name, get){
 }
 
 // the realm schemas of a real package, for a schema list that the
-// application builds at the top of a module: one entry that stubs/realm
+// application builds at the top of a module: one entry that web/stubs/realm.js
 // replaces by the real schemas when the realm is opened. get(): the real
 // schema list, once loaded
 export function lazy_schemas(name, get){
