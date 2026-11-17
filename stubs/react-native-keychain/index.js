@@ -25,11 +25,25 @@ export async function resetGenericPassword(options){
   return true;
 }
 
-export const ACCESSIBLE = {};
-export const ACCESS_CONTROL = {};
-export const AUTHENTICATION_TYPE = {};
-export const SECURITY_LEVEL = {};
-export const STORAGE_TYPE = {};
+// a browser has no secure hardware: null, as on iOS, lets the caller keep
+// its default
+export async function getSecurityLevel(){
+  return null;
+}
+
+const names = (...list)=>Object.fromEntries(list.map(name=>[name, name]));
+export const ACCESSIBLE = names('WHEN_UNLOCKED', 'AFTER_FIRST_UNLOCK',
+  'ALWAYS', 'WHEN_PASSCODE_SET_THIS_DEVICE_ONLY',
+  'WHEN_UNLOCKED_THIS_DEVICE_ONLY', 'AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY');
+export const ACCESS_CONTROL = names('USER_PRESENCE', 'BIOMETRY_ANY',
+  'BIOMETRY_CURRENT_SET', 'DEVICE_PASSCODE', 'APPLICATION_PASSWORD',
+  'BIOMETRY_ANY_OR_DEVICE_PASSCODE', 'BIOMETRY_CURRENT_SET_OR_DEVICE_PASSCODE');
+export const AUTHENTICATION_TYPE = names('DEVICE_PASSCODE_OR_BIOMETRICS',
+  'BIOMETRICS');
+export const SECURITY_LEVEL = names('SECURE_SOFTWARE', 'SECURE_HARDWARE',
+  'ANY');
+export const STORAGE_TYPE = names('AES_CBC', 'AES_GCM', 'AES_GCM_NO_AUTH',
+  'RSA');
 export default {setGenericPassword, getGenericPassword, resetGenericPassword,
-  ACCESSIBLE, ACCESS_CONTROL, AUTHENTICATION_TYPE, SECURITY_LEVEL,
+  getSecurityLevel, ACCESSIBLE, ACCESS_CONTROL, AUTHENTICATION_TYPE, SECURITY_LEVEL,
   STORAGE_TYPE};

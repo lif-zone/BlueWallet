@@ -10,8 +10,8 @@
 //   so a later load always sees the earlier writes.
 // All the realm files are in one IndexedDB database, a row per object, with
 // the key [path, object type, id].
-// Not here: encryption (encryptionKey is ignored), migrations, listeners,
-// and queries other than `field = value`.
+// Not here: encryption (encryptionKey is ignored), schema versions and
+// migrations, listeners, and queries beyond query_parse().
 const DB_NAME = 'bluewallet-realm';
 const STORE = 'rows';
 let db; // IDBDatabase, once open
@@ -93,24 +93,93 @@ async function file_load(path){
   return file;
 }
 
-// `field = value`, `field == value`: value is "str", 'str', a number,
-// true/false, or $0.. for an argument
+// the part of the Realm query language that BlueWallet and the Ark sdk use:
+//   field == value, field = value, field != value
+//   field IN {value, value}
+//   AND (&&), OR (||), and ( )
+// value: "str", 'str', a number, true, false, null, or $0.. for an argument
+const query_re = /"[^"]*"|'[^']*'|\$\d+|==|!=|=|&&|\|\||[(){},]|[\w.@]+/g;
 function query_parse(query, args){
-  let m = /^\s*(\w+)\s*==?\s*(.+?)\s*$/.exec(query);
-  if (!m)
+  let fail = ()=>{
     throw Error('realm stub: unsupported query: '+query);
-  let [, field, v] = m, value, q;
-  if (q = /^(["'])(.*)\1$/.exec(v))
-    value = q[2];
-  else if (q = /^\$(\d+)$/.exec(v))
-    value = args[+q[1]];
-  else if (v=='true' || v=='false')
-    value = v=='true';
-  else if (!isNaN(+v))
-    value = +v;
-  else
-    throw Error('realm stub: unsupported query: '+query);
-  return obj=>obj[field]===value;
+  };
+  if (query.replace(query_re, '').trim())
+    fail();
+  let tokens = query.match(query_re)||[], i = 0;
+  let peek = ()=>tokens[i];
+  let next = ()=>tokens[i++];
+  let is = re=>peek()!==undefined && re.test(peek());
+  let value = ()=>{
+    let t = next(), m;
+    if (t===undefined)
+      fail();
+    if (m = /^\$(\d+)$/.exec(t))
+      return args[+m[1]];
+    if (/^["']/.test(t))
+      return t.slice(1, -1);
+    if (/^(null|nil)$/i.test(t))
+      return null;
+    if (/^(true|false)$/i.test(t))
+      return t.toLowerCase()=='true';
+    if (isNaN(+t))
+      fail();
+    return +t;
+  };
+  // a missing field is null
+  let eq = (a, b)=>b==null ? a==null : a===b;
+  let or;
+  let prim = ()=>{
+    if (peek()=='('){
+      next();
+      let f = or();
+      if (next()!=')')
+        fail();
+      return f;
+    }
+    let field = next(), op = next();
+    if (!field || !/^[\w.@]+$/.test(field) || !op)
+      fail();
+    if (op=='==' || op=='='){
+      let v = value();
+      return obj=>eq(obj[field], v);
+    }
+    if (op=='!='){
+      let v = value();
+      return obj=>!eq(obj[field], v);
+    }
+    if (!/^IN$/i.test(op) || next()!='{')
+      fail();
+    let vals = [];
+    while (peek()!='}'){
+      vals.push(value());
+      if (peek()==',')
+        next();
+      else if (peek()!='}')
+        fail();
+    }
+    next();
+    return obj=>vals.some(v=>eq(obj[field], v));
+  };
+  let and = ()=>{
+    let fs = [prim()];
+    while (is(/^(AND|&&)$/i)){
+      next();
+      fs.push(prim());
+    }
+    return fs.length==1 ? fs[0] : obj=>fs.every(f=>f(obj));
+  };
+  or = ()=>{
+    let fs = [and()];
+    while (is(/^(OR|\|\|)$/i)){
+      next();
+      fs.push(and());
+    }
+    return fs.length==1 ? fs[0] : obj=>fs.some(f=>f(obj));
+  };
+  let f = or();
+  if (i<tokens.length)
+    fail();
+  return f;
 }
 
 class Results extends Array {
@@ -154,6 +223,9 @@ export default class Realm {
   constructor(path, schema){
     this.path = path;
     this.isClosed = false;
+    // an entry {__lazy_schemas()} stands for schemas of a package that is
+    // loaded later than the list was built (web/arkade.js)
+    schema = schema.flatMap(s=>s.__lazy_schemas ? s.__lazy_schemas() : [s]);
     this.schema = schema;
     this._pk = {};
     for (let s of schema){

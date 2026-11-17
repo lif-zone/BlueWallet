@@ -10,6 +10,7 @@ import loc_requires from './loc_requires.json' with {type: 'json'};
 // loaded before the first one (loc_load)
 import 'dayjs';
 import {texts as toast_texts} from './toast.js';
+import {ark_load} from './arkade.js';
 declare const $lif: any;
 
 // the BlueWallet application icon (the Android launcher icon), in place of
@@ -141,6 +142,19 @@ async function loc_init_all(){
     await loc_load(lang);
 }
 
+// The Ark packages are loaded only when an Ark wallet is used
+// (web/arkade.js). Everything an Ark wallet does with them starts with its
+// init(), so init() first waits for them.
+async function ark_init(){
+  let {LightningArkWallet} =
+    await import('../class/wallets/lightning-ark-wallet.ts');
+  let init = LightningArkWallet.prototype.init;
+  LightningArkWallet.prototype.init = async function(this: any){
+    await ark_load();
+    return await init.call(this);
+  };
+}
+
 // modules that are loaded with require() at the top of a module, so they
 // must be there before the application is imported
 async function require_init_early(){
@@ -173,6 +187,7 @@ async function require_init_early(){
     await loc_init_early();
     let {default: App} = await import('../App.tsx');
     await require_init();
+    await ark_init();
     let loc = (await import('../loc/index.ts')).default;
     toast_texts.copied = ()=>loc._.copied;
     loc_init_all();

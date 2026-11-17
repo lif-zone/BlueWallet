@@ -102,6 +102,15 @@
           }
         }
       },
+      "@arkade-os/boltz-swap": {
+        "./package.json": {
+          "json": {
+            "dependencies": {
+              "@arkade-os/sdk": "0.4.79"
+            }
+          }
+        }
+      },
       "@react-navigation/native-stack": {
         "./lib/module/views/NativeStackView.js": {
           "replace_line": {
@@ -163,6 +172,8 @@
     "bolt11": "1.4.2",
     "bs58check": "4.0.0",
     "buffer": "6.0.3",
+    "bw-arkade-boltz-swap": "npm:@arkade-os/boltz-swap@0.3.67",
+    "bw-arkade-sdk": "npm:@arkade-os/sdk@0.4.79",
     "bw-icons-entypo": "npm:@react-native-vector-icons/entypo@13.1.5",
     "bw-icons-ionicons": "npm:@react-native-vector-icons/ionicons@13.1.5",
     "bw-web": "file:./web",
