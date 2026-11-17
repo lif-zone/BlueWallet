@@ -5,14 +5,22 @@
 App loads and renders the wallets list. Send, SLIP39 and Lightning/Ark flows
 were not exercised yet.
 
+
 ## Open Tasks
 
-- web/img_sizes.json is generated: re-run `node web/img_sizes_gen.mjs` when
-  images under img/ are added or resized (a missing entry shows at 0x0).
-- web/loc_requires.json is generated: re-run `node web/loc_requires_gen.mjs`
-  when loc/index.ts gets a new language (a missing entry shows in English).
-- stubs/arkade-os-sdk and stubs/arkade-os-boltz-swap are facades that list the
-  names BlueWallet imports from the Ark packages: when BlueWallet imports a
-  new name, add it there (a missing one fails at start with "does not
-  provide an export named ..."). The real versions are bw-arkade-* in
-  package.json, with the sdk version pinned for boltz-swap in lif.patches.
+- Electrum TLS over LIF
+  - BlueWallet does not verify TLS (verify==false) because many electrum
+    servers are self-signed.
+  - client side TLS disabled, since its slow loading. enable once loading
+    perf improved.
+    - add a button to enable it.
+- React Native -> web porting:
+  - web/img_sizes.json is generated: re-run `node web/img_sizes_gen.mjs` when
+    images under img/ are added or resized (a missing entry shows at 0x0).
+  - web/loc_requires.json is generated: re-run `node web/loc_requires_gen.mjs`
+    when loc/index.ts gets a new language (a missing entry shows in English).
+  - stubs/arkade-os-sdk and stubs/arkade-os-boltz-swap are facades that list the
+    names BlueWallet imports from the Ark packages: when BlueWallet imports a
+    new name, add it there (a missing one fails at start with "does not
+    provide an export named ..."). The real versions are bw-arkade-* in
+    package.json, with the sdk version pinned for boltz-swap in lif.patches.
