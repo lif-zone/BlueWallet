@@ -165,6 +165,19 @@ async function require_init_early(){
   req.register('net', tcp_socket);
   req.register('tls', tcp_socket);
   req.register('electrum-client', (await import('electrum-client')).default);
+  // screen/settings/About.tsx: current-branch.json is a native build output
+  // (the git branch of the build)
+  req.register('../../current-branch.json', 'master');
+  // animations
+  await Promise.all([
+    ['../img/txblock.json', '../img/txblock.json'],
+    ['../../img/pending.json', '../img/pending.json'],
+    ['../../img/bluenice.json', '../img/bluenice.json'],
+    ['../../img/msvault.json', '../img/msvault.json'],
+  ].map(async([path, file])=>{
+    let res = await fetch(new URL(file, import.meta.url));
+    req.register(path, await res.json());
+  }));
 }
 
 (async()=>{

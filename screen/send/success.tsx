@@ -15,7 +15,6 @@ import { useSettings } from '../../hooks/context/useSettings';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList.ts';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList.ts';
-import blueniceAnimation from '../../img/bluenice.json' with {type: 'json'};
 
 type RouteProps = RouteProp<SendDetailsStackParamList, 'Success'>;
 type NavigationProps = NativeStackNavigationProp<SendDetailsStackParamList, 'Success'>;
@@ -127,7 +126,7 @@ export const SuccessView = ({ amount, amountUnit, fee, invoiceDescription, shoul
       <View style={styles.ready}>
         <LottieView
           style={styles.lottie}
-          source={blueniceAnimation}
+          source={require('../../img/bluenice.json')}
           autoPlay={shouldAnimate}
           loop={false}
           progress={shouldAnimate ? 0 : 1}

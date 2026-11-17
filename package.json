@@ -244,7 +244,6 @@
       "@react-native-vector-icons/material-icons": "./web/stubs/react-native-vector-icons-material-icons.js",
       "@react-navigation/elements": "^2.7.0",
       "bc-bech32": "file:./blue_modules/bc-bech32//",
-      "bip47": "github:BlueWallet/bip47#df82345",
       "bs58check": "4.0.0",
       "bw-arkade-boltz-swap": "npm:@arkade-os/boltz-swap@0.3.67",
       "bw-arkade-sdk": "npm:@arkade-os/sdk@0.4.79",
@@ -358,7 +357,7 @@
       "react-native-web": {
         "./dist/index.js": {
           "replace_line": {
-            "export { default as useWindowDimensions } from './exports/useWindowDimensions';": "export { default as useWindowDimensions } from './exports/useWindowDimensions';\nexport function codegenNativeComponent(name){ return (props)=>null; }\nexport function PlatformColor(){ return undefined; }\nexport {ToastAndroid} from 'bw-web/toast.js';"
+            "export { default as useWindowDimensions } from './exports/useWindowDimensions';": "export { default as useWindowDimensions } from './exports/useWindowDimensions';\nexport {codegenNativeComponent, PlatformColor, DevSettings} from 'bw-web/react_native_extra.js';\nexport {ToastAndroid} from 'bw-web/toast.js';"
           }
         },
         "./dist/modules/AccessibilityUtil/propsToAccessibilityComponent.js": {
