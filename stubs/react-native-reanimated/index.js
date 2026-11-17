@@ -199,6 +199,49 @@ export function interpolate(v, input, output, type){
   return y0+(y1-y0)*(v-x0)/(x1-x0);
 }
 
+// color string -> [r, g, b, a]. '#rgb', '#rrggbb', '#rrggbbaa', 'rgb()',
+// 'rgba()' are parsed here, any other CSS color (a name) by the browser.
+let color_ctx;
+const color_cache = new Map();
+function color_parse(color){
+  let s = String(color).trim();
+  let res = color_cache.get(s);
+  if (res)
+    return res;
+  let m;
+  if (m = s.match(/^#([0-9a-f]{3,8})$/i)){
+    let h = m[1];
+    if (h.length<=4)
+      h = [...h].map(ch=>ch+ch).join('');
+    res = [0, 2, 4].map(i=>parseInt(h.slice(i, i+2), 16));
+    res.push(h.length==8 ? parseInt(h.slice(6, 8), 16)/255 : 1);
+  } else if (m = s.match(/^rgba?\(([^)]+)\)$/i)){
+    let p = m[1].split(/[\s,/]+/).filter(Boolean).map(parseFloat);
+    res = [p[0], p[1], p[2], p[3] ?? 1];
+  } else {
+    color_ctx ||= document.createElement('canvas').getContext('2d');
+    color_ctx.fillStyle = '#000';
+    color_ctx.fillStyle = s;
+    // the browser gives back '#rrggbb' or 'rgba(...)'
+    res = color_ctx.fillStyle==s ? [0, 0, 0, 1] :
+      color_parse(color_ctx.fillStyle);
+  }
+  if (res.some(n=>Number.isNaN(n)))
+    res = [0, 0, 0, 1];
+  color_cache.set(s, res);
+  return res;
+}
+
+// interpolateColor(v, [0, 1], ['#fff', 'red']) -> 'rgba(r, g, b, a)'
+// The value is clamped to the input range, as colors do not extend.
+export function interpolateColor(v, input, output){
+  let colors = output.map(color_parse);
+  let ch = i=>interpolate(v, input, colors.map(c=>c[i]), 'clamp');
+  let rgb = [0, 1, 2].map(i=>Math.round(Math.min(255, Math.max(0, ch(i)))));
+  let a = Math.min(1, Math.max(0, ch(3)));
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${+a.toFixed(3)})`;
+}
+
 const ease = {
   linear: t=>t,
   quad: t=>t*t,
