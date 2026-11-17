@@ -86,6 +86,11 @@
             "button: 'button',": "// button: a <div role=button>, not a <button> element. React Native nests buttons, HTML does not allow a <button> in a <button>"
           }
         },
+        "./dist/exports/findNodeHandle/index.js": {
+          "replace_line": {
+            "export default findNodeHandle;": "export {default} from 'bw-web/find_node_handle.js';"
+          }
+        },
         "./dist/exports/I18nManager/index.js": {
           "replace_line": {
             "export default I18nManager;": "export {default} from 'bw-web/i18n_manager.js';"

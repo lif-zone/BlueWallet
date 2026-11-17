@@ -11,6 +11,11 @@ function on_navigate(event){
   let nav = globalThis.navigation;
   if (event.navigationType!='traverse' || !event.cancelable)
     return;
+  // only the user's Back (browser button, mouse, gesture). The application
+  // moves in the history too (react-navigation after a pop): that is not a
+  // Back press, and handling it as one pops a second screen.
+  if (!event.userInitiated)
+    return;
   if (event.destination.index<0 ||
     event.destination.index>=nav.currentEntry.index)
   {

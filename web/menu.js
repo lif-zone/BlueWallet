@@ -64,6 +64,8 @@ export function menu_show({x, y, title, actions, on_select, on_cancel}){
     document.removeEventListener('keydown', on_keydown, true);
     window.removeEventListener('blur', on_dismiss);
     window.removeEventListener('resize', on_dismiss);
+    globalThis.navigation?.removeEventListener('currententrychange',
+      on_dismiss);
     menu.remove();
     if (!selected)
       on_cancel?.();
@@ -118,4 +120,6 @@ export function menu_show({x, y, title, actions, on_select, on_cancel}){
   document.addEventListener('keydown', on_keydown, true);
   window.addEventListener('blur', on_dismiss);
   window.addEventListener('resize', on_dismiss);
+  // the screen under the menu went away (eg. the browser Back button)
+  globalThis.navigation?.addEventListener('currententrychange', on_dismiss);
 }
