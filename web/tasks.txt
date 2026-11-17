@@ -25,6 +25,11 @@ were not exercised yet.
   - First message to them: ask to open a web2 branch for the web port.
   - Offer the two fixes branch changes: json import attributes, and the
     static import of bech32.
+- Upstream bugs to report (not fixed here: they do not block us)
+  - loc/index.ts: 'ua' and 'zar_afr' load dayjs 'uk'/'af' but do not set
+    lang, so dates stay in the previous language.
+  - screen/wallets/signVerify.tsx: Verify shows no result. The alert anchor
+    is unmounted while loading. Seen on web, not checked on a phone.
 - React Native -> web porting:
   - web/img_sizes.json is generated: re-run `node web/img_sizes_gen.mjs` when
     images under img/ are added or resized (a missing entry shows at 0x0).
