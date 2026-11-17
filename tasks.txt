@@ -18,6 +18,9 @@ were not exercised yet.
   - implemented, not yet tested:
     - CA check in tcpip_tls.js
     - Negative TLS security tests (validate fails/rejects when configured to)
+- needs still testing
+  - Finish re-testing the reworked multisig screens (creating the vault,
+    co-signers, export file, multisig send and co-sign)
 - React Native -> web porting:
   - web/img_sizes.json is generated: re-run `node web/img_sizes_gen.mjs` when
     images under img/ are added or resized (a missing entry shows at 0x0).
