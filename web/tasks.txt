@@ -16,11 +16,8 @@ were not exercised yet.
     - add a button to enable it.
   - TLS for lif_fetch, lif_WebSocket, lif_rpc_websocket.
   - implemented, not yet tested:
-    - CA check in tcpip_tls.js
     - Negative TLS security tests (validate fails/rejects when configured to)
 - needs still testing
-  - Finish re-testing the reworked multisig screens (creating the vault,
-    co-signers, export file, multisig send and co-sign)
   - Real camera QR scan (the test machine has no camera).
   - Real broadcast of a transaction, including a silent-payment send
     (tested only up to the Confirm screen).
