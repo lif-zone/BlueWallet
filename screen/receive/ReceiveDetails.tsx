@@ -26,7 +26,7 @@ import { TransactionPendingIconBig } from '../../components/TransactionPendingIc
 import { HandOffActivityType } from '../../components/types';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
-import loc, { formatBalance } from '../../loc';
+import loc, { formatBalance, unitLabel } from '../../loc';
 import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsStackParamList';
 import { SuccessView } from '../send/success';
@@ -367,7 +367,7 @@ const ReceiveDetails = () => {
           setDisplayBalance(
             loc.formatString(loc.transactions.pending_with_amount, {
               amt1: formatBalance(balance.unconfirmed, BitcoinUnit.LOCAL_CURRENCY, true).toString(),
-              amt2: formatBalance(balance.unconfirmed, BitcoinUnit.BTC, true).toString(),
+              amt2: formatBalance(balance.unconfirmed, BitcoinUnit.BTC, true, wallet?.coin).toString(),
             }),
           );
           setShowPendingBalance(true);
@@ -385,7 +385,7 @@ const ReceiveDetails = () => {
             setDisplayBalance(
               loc.formatString(loc.transactions.received_with_amount, {
                 amt1: formatBalance(balanceToShow, BitcoinUnit.LOCAL_CURRENCY, true).toString(),
-                amt2: formatBalance(balanceToShow, BitcoinUnit.BTC, true).toString(),
+                amt2: formatBalance(balanceToShow, BitcoinUnit.BTC, true, wallet?.coin).toString(),
               }),
             );
             if (walletID) {
@@ -695,11 +695,11 @@ const ReceiveDetails = () => {
     if (number > 0) {
       switch (customUnit) {
         case BitcoinUnit.BTC:
-          return customAmount + ' BTC';
+          return customAmount + ' ' + unitLabel(BitcoinUnit.BTC, wallet?.coin);
         case BitcoinUnit.SATS:
-          return satoshiToBTC(number) + ' BTC';
+          return satoshiToBTC(number) + ' ' + unitLabel(BitcoinUnit.BTC, wallet?.coin);
         case BitcoinUnit.LOCAL_CURRENCY:
-          return fiatToBTC(number) + ' BTC';
+          return fiatToBTC(number) + ' ' + unitLabel(BitcoinUnit.BTC, wallet?.coin);
       }
       return customAmount + ' ' + customUnit;
     } else {

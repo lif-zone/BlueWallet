@@ -44,7 +44,7 @@ import prompt from '../../helpers/prompt';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import useWalletSubscribe from '../../hooks/useWalletSubscribe';
-import loc, { formatBalance, formatBalanceWithoutSuffix } from '../../loc';
+import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { isOnChainTransaction, resolveTxDisplayState } from '../../blue_modules/transactionDisplayState';
@@ -201,11 +201,12 @@ const TransactionStatus: React.FC = () => {
   const hideFromRecentMenu = recentOwningWallet?.getHideTransactionsInWalletsList?.() ?? false;
   const recentBalanceUnit = recentOwningWallet ? (recentOwningWallet.preferredBalanceUnit ?? BitcoinUnit.BTC) : undefined;
   const recentWalletLabel = recentOwningWallet?.getLabel?.();
+  const coin = recentOwningWallet?.coin;
   const recentTransaction = useMemo(() => {
     const id = transactionId ?? hash;
     const value = Number(tx?.value);
     const formattedValue =
-      !hideBalanceInRecentMenu && recentBalanceUnit && Number.isFinite(value) ? formatBalance(value, recentBalanceUnit, true) : '';
+      !hideBalanceInRecentMenu && recentBalanceUnit && Number.isFinite(value) ? formatBalance(value, recentBalanceUnit, true, coin) : '';
     const label = txMetadata?.[id]?.memo || `Transaction ${id.slice(0, 12)}…`;
     return {
       id: `transaction:${walletID}:${id}`,
@@ -1157,13 +1158,13 @@ const TransactionStatus: React.FC = () => {
           >
             {txValue !== null ? formatBalanceWithoutSuffix(txValue, preferredBalanceUnit, true) : '-'}
             {preferredBalanceUnit !== BitcoinUnit.LOCAL_CURRENCY && (
-              <Text style={[styles.valueUnit, stylesHook.valueUnit]}>{` ${preferredBalanceUnit}`}</Text>
+              <Text style={[styles.valueUnit, stylesHook.valueUnit]}>{` ${unitLabel(preferredBalanceUnit, coin)}`}</Text>
             )}
           </Text>
           {txValue !== null && (
             <Text style={[styles.localCurrency, stylesHook.localCurrency, scaledStyles.localCurrency]}>
               {preferredBalanceUnit === BitcoinUnit.LOCAL_CURRENCY
-                ? `${formatBalanceWithoutSuffix(Math.abs(txValue), BitcoinUnit.BTC, true)} ${BitcoinUnit.BTC}`
+                ? `${formatBalanceWithoutSuffix(Math.abs(txValue), BitcoinUnit.BTC, true)} ${unitLabel(BitcoinUnit.BTC, coin)}`
                 : satoshiToLocalCurrency(Math.abs(txValue))}
             </Text>
           )}
@@ -1328,7 +1329,7 @@ const TransactionStatus: React.FC = () => {
             <CopyTextToClipboard
               text={
                 calculatedFee !== null && calculatedFee !== undefined
-                  ? `${formatBalanceWithoutSuffix(calculatedFee, BitcoinUnit.SATS, true)} sats / ${satoshiToLocalCurrency(calculatedFee)}`
+                  ? `${formatBalanceWithoutSuffix(calculatedFee, BitcoinUnit.SATS, true)} ${unitLabel(BitcoinUnit.SATS, coin)} / ${satoshiToLocalCurrency(calculatedFee)}`
                   : '-'
               }
               style={StyleSheet.flatten([styles.detailValue, stylesHook.detailValue])}

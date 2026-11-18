@@ -6,7 +6,7 @@ import BlueCard from '../../components/BlueCard';
 import { formatTransactionOutput } from '../../helpers/formatTransactionOutput';
 import BlueText from '../../components/BlueText';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
-import loc, { formatBalance, formatBalanceWithoutSuffix } from '../../loc';
+import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../../loc';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import presentAlert from '../../components/Alert';
 import { useTheme } from '../../components/themes';
@@ -315,7 +315,7 @@ const Confirm: React.FC = () => {
           <Text testID="TransactionValue" style={[styles.valueValue, stylesHook.valueValue]}>
             {item.value != null ? satoshiToBTC(item.value) : null}
           </Text>
-          <Text style={[styles.valueUnit, stylesHook.valueValue]}>{' ' + loc.units[BitcoinUnit.BTC]}</Text>
+          <Text style={[styles.valueUnit, stylesHook.valueValue]}>{' ' + unitLabel(BitcoinUnit.BTC, wallet.coin)}</Text>
         </View>
         <Text style={[styles.transactionAmountFiat, stylesHook.transactionAmountFiat]}>
           {item.value != null ? satoshiToLocalCurrency(item.value) : null}
@@ -375,7 +375,7 @@ const Confirm: React.FC = () => {
       <View style={styles.cardBottom}>
         <BlueCard>
           <Text style={styles.cardText} testID="TransactionFee">
-            {loc.send.create_fee}: {formatBalance(feeSatoshi, BitcoinUnit.BTC)} ({satoshiToLocalCurrency(feeSatoshi)})
+            {loc.send.create_fee}: {formatBalance(feeSatoshi, BitcoinUnit.BTC, false, wallet.coin)} ({satoshiToLocalCurrency(feeSatoshi)})
           </Text>
           {state.isLoading ? (
             <ActivityIndicator />

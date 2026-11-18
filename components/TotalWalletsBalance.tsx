@@ -26,7 +26,8 @@ const TotalWalletsBalance: React.FC = React.memo(() => {
 
   const totalBalanceFormatted = useMemo(() => {
     const totalBalance = wallets.reduce((prev, curr) => {
-      return curr.hideBalance ? prev : prev + (curr.getBalance() || 0);
+      // the total is in Bitcoin: a wallet of another coin is not a part of it
+      return curr.hideBalance || curr.coin ? prev : prev + (curr.getBalance() || 0);
     }, 0);
     return formatBalanceWithoutSuffix(totalBalance, totalBalancePreferredUnit, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
