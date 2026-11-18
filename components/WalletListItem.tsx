@@ -63,7 +63,7 @@ const WalletListItem: React.FC<Props> = ({
 
   const balance = useMemo(() => {
     if (wallet.hideBalance) return '';
-    return formatBalance(Number(wallet.getBalance()), wallet.getPreferredBalanceUnit(), true);
+    return formatBalance(Number(wallet.getBalance()), wallet.getPreferredBalanceUnit(), true, wallet.coin);
   }, [wallet]);
 
   const highlightStyle = useMemo(() => {

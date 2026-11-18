@@ -13,7 +13,7 @@ import TransactionOffchainIncomingIcon from '../components/icons/TransactionOffc
 import TransactionOnchainIcon from '../components/icons/TransactionOnchainIcon';
 import TransactionOutgoingIcon from '../components/icons/TransactionOutgoingIcon';
 import TransactionPendingIcon from '../components/icons/TransactionPendingIcon';
-import loc, { formatBalanceWithoutSuffix, formatTransactionListDate, transactionTimeToReadable } from '../loc';
+import loc, { formatBalanceWithoutSuffix, formatTransactionListDate, transactionTimeToReadable, unitLabel } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { useSettings } from '../hooks/context/useSettings';
 import { useTheme } from './themes';
@@ -364,9 +364,10 @@ const TransactionListItemComponent: React.FC<TransactionListItemProps> = ({
   const { label: transactionTypeLabel, icon: avatar } = determineTransactionTypeAndAvatar();
 
   const amountWithUnit = useMemo(() => {
-    const unitSuffix = itemPriceUnit === BitcoinUnit.BTC || itemPriceUnit === BitcoinUnit.SATS ? ` ${itemPriceUnit}` : ' ';
+    const coin = wallets.find(w => w.getID() === walletID)?.coin;
+    const unitSuffix = itemPriceUnit === BitcoinUnit.BTC || itemPriceUnit === BitcoinUnit.SATS ? ` ${unitLabel(itemPriceUnit, coin)}` : ' ';
     return `${formattedAmount}${unitSuffix}`;
-  }, [formattedAmount, itemPriceUnit]);
+  }, [formattedAmount, itemPriceUnit, wallets, walletID]);
 
   const onPress = useCallback(async () => {
     // If a custom onPress handler was provided, use it and return

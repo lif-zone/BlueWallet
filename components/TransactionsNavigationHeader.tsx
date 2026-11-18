@@ -8,7 +8,7 @@ import { LightningCustodianWallet } from '../class/wallets/lightning-custodian-w
 import { MultisigHDWallet } from '../class/wallets/multisig-hd-wallet';
 import WalletGradient from '../class/wallet-gradient';
 import { TWallet } from '../class/wallets/types';
-import loc, { formatBalance, formatBalanceWithoutSuffix } from '../loc';
+import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { FiatUnit } from '../models/fiatUnit';
 import { BlurredBalanceView } from './BlurredBalanceView';
@@ -70,7 +70,7 @@ const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> 
   }, [wallet, verifyIfWalletAllowsOnchainAddress]);
 
   const handleCopyPress = useCallback(() => {
-    const value = formatBalance(wallet.getBalance(), unit);
+    const value = formatBalance(wallet.getBalance(), unit, false, wallet.coin);
     if (value) {
       Clipboard.setString(value);
     }
@@ -221,7 +221,9 @@ const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> 
             {!hideBalance && (
               <TouchableOpacity style={styles.walletPreferredUnitView} onPress={changeWalletBalanceUnit} disabled={unitSwitching}>
                 <Text style={styles.walletPreferredUnitText}>
-                  {unit === BitcoinUnit.LOCAL_CURRENCY ? (preferredFiatCurrency?.endPointKey ?? FiatUnit.USD) : unit}
+                  {unit === BitcoinUnit.LOCAL_CURRENCY
+                    ? (preferredFiatCurrency?.endPointKey ?? FiatUnit.USD)
+                    : unitLabel(unit, wallet.coin)}
                 </Text>
               </TouchableOpacity>
             )}

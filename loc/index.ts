@@ -11,7 +11,7 @@ import { I18nManager } from 'react-native';
 import * as RNLocalize from 'react-native-localize';
 
 import { satoshiToLocalCurrency } from '../blue_modules/currency';
-import { BitcoinUnit } from '../models/bitcoinUnits';
+import { BitcoinUnit, TCoin } from '../models/bitcoinUnits';
 import { AvailableLanguages, LangCode } from './languages';
 import { resolveLangCodeFromRnLocales, RnLocale } from './resolveDeviceLangCode';
 import enJson from './en.json' with {type: 'json'};
@@ -474,21 +474,33 @@ export const removeTrailingZeros = (value: number | string): string => {
 };
 
 /**
+ * The name of a unit, as shown to the user
+ *
+ * @param unit {string} `BitcoinUnit.BTC` or `BitcoinUnit.SATS`
+ * @param coin the coin of the amount (`wallet.coin`). Undefined: Bitcoin
+ */
+export function unitLabel(unit: string, coin?: TCoin): string {
+  return coin?.units[unit as keyof TCoin['units']] ?? loc.units[unit] ?? unit;
+}
+
+/**
  *
  * @param balance {number} Satoshis
  * @param toUnit {string} Value from models/bitcoinUnits.js
  * @param withFormatting {boolean} Works only with `BitcoinUnit.SATS`, makes spaces wetween groups of 000
+ * @param coin the coin of the balance (`wallet.coin`). Undefined: Bitcoin
  * @returns {string}
  */
-export function formatBalance(balance: number, toUnit: string, withFormatting = false): string {
+export function formatBalance(balance: number, toUnit: string, withFormatting = false, coin?: TCoin): string {
   if (toUnit === undefined) {
-    return balance + ' ' + loc.units[BitcoinUnit.BTC];
+    return balance + ' ' + unitLabel(BitcoinUnit.BTC, coin);
   }
   if (toUnit === BitcoinUnit.BTC) {
     const value = new BigNumber(balance).dividedBy(100000000).toFixed(8);
-    return removeTrailingZeros(value) + ' ' + loc.units[BitcoinUnit.BTC];
+    return removeTrailingZeros(value) + ' ' + unitLabel(BitcoinUnit.BTC, coin);
   } else if (toUnit === BitcoinUnit.SATS) {
-    return (withFormatting ? new Intl.NumberFormat().format(balance).toString() : String(balance)) + ' ' + loc.units[BitcoinUnit.SATS];
+    const value = withFormatting ? new Intl.NumberFormat().format(balance).toString() : String(balance);
+    return value + ' ' + unitLabel(BitcoinUnit.SATS, coin);
   } else {
     console.debug('[UnitSwitch/Fiat] formatBalance to fiat', { balance, unit: toUnit, withFormatting });
     return satoshiToLocalCurrency(balance);
