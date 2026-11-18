@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import BlueText from '../../components/BlueText';
 import { HDSegwitBech32Transaction, TxVerificationError } from '../../class/hd-segwit-bech32-transaction';
-import { HDSegwitBech32Wallet } from '../../class/wallets/hd-segwit-bech32-wallet';
+import { isHDSegwitBech32 } from '../../util/isHDSegwitBech32';
 import presentAlert from '../../components/Alert';
 import SafeArea from '../../components/SafeArea';
 import loc from '../../loc';
@@ -46,7 +46,7 @@ export default class RBFBumpFee extends CPFP {
         this.state.wallet._hdWalletInstance,
         this.state.wallet.getMasterFingerprint(),
       );
-    } else if (this.state.wallet?.type === HDSegwitBech32Wallet.type) {
+    } else if (isHDSegwitBech32(this.state.wallet)) {
       tx = new HDSegwitBech32Transaction(null, this.state.txid, this.state.wallet);
     } else {
       return this.setState({ nonReplaceable: true, isLoading: false });

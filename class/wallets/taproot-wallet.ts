@@ -34,10 +34,10 @@ export class TaprootWallet extends SegwitBech32Wallet {
    * @param scriptPubKey
    * @returns {boolean|string} Either bech32 address or false
    */
-  static scriptPubKeyToAddress(scriptPubKey: string): string | false {
+  static scriptPubKeyToAddress(scriptPubKey: string, network: bitcoin.Network = bitcoin.networks.bitcoin): string | false {
     try {
       const publicKey = hexToUint8Array(scriptPubKey);
-      return bitcoin.address.fromOutputScript(publicKey, bitcoin.networks.bitcoin);
+      return bitcoin.address.fromOutputScript(publicKey, network);
     } catch (_) {
       return false;
     }

@@ -59,6 +59,7 @@ import { CommonToolTipActions, ToolTipAction } from '../../typings/CommonToolTip
 import ActionSheet from '../ActionSheet';
 import { isCancel, pickTransaction } from '../../blue_modules/fs';
 import { Measure } from '../../class/measure';
+import { isHDSegwitBech32 } from '../../util/isHDSegwitBech32';
 import { isWatchOnlySegwitBech32 } from '../../util/isWatchOnlySegwitBech32';
 import { errorMessage } from '../../helpers/errorMessage';
 
@@ -325,7 +326,7 @@ const SendDetails = () => {
     setParams({
       ...(walletActuallyChanged ? { utxos: null } : {}),
       isTransactionReplaceable:
-        (wallet.type === HDSegwitBech32Wallet.type || isWatchOnlySegwitBech32(wallet)) && !routeParams.isTransactionReplaceable
+        (isHDSegwitBech32(wallet) || isWatchOnlySegwitBech32(wallet)) && !routeParams.isTransactionReplaceable
           ? true
           : undefined,
     });
@@ -1218,7 +1219,7 @@ const SendDetails = () => {
       {
         ...CommonToolTipActions.AllowRBF,
         menuState: isTransactionReplaceable,
-        hidden: !((wallet.type === HDSegwitBech32Wallet.type || isWatchOnlySegwitBech32(wallet)) && isTransactionReplaceable !== undefined),
+        hidden: !((isHDSegwitBech32(wallet) || isWatchOnlySegwitBech32(wallet)) && isTransactionReplaceable !== undefined),
       },
     ];
     walletActions.push(rbfAction);

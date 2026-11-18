@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BlueApp as BlueAppClass, TCounterpartyMetadata, TTXMetadata, TAddressMetadata } from '../../class/blue-app';
-import { LegacyWallet } from '../../class/wallets/legacy-wallet';
+import { LegacyWallet, walletElectrum } from '../../class/wallets/legacy-wallet';
 import { LightningArkWallet } from '../../class/wallets/lightning-ark-wallet';
 import { removeRecentMenuItemsForWallets } from './recentMenuItems';
 import { WatchOnlyWallet } from '../../class/wallets/watch-only-wallet';
@@ -286,8 +286,13 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         // `ensureConnected()` ping-checks the existing socket and, only if needed,
         // tears it down and reconnects. Replaces the old wait+ping+wait pattern
         // which surfaced false "network error" alerts after iOS suspend/resume.
-        const connected = await BlueElectrum.ensureConnected();
-        if (!connected) {
+        // one Electrum client for each network that has a wallet: the wallets of a network that cannot be
+        // reached are skipped, and the others are refreshed
+        const electrums = BlueApp.getElectrums(lastSnappedTo);
+        if (electrums.length === 0) electrums.push(BlueElectrum);
+        const reached = await Promise.all(electrums.map(electrum => electrum.ensureConnected()));
+        const connected = electrums.filter((_electrum, i) => reached[i]);
+        if (connected.length === 0) {
           console.log('[refreshAllWalletTransactions] could not establish Electrum connection, aborting refresh');
           return;
         }
@@ -315,7 +320,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
             ? (async () => {
                 const codesStart = Date.now();
                 console.debug('[refreshAllWalletTransactions] Fetching sender payment codes (parallel)');
-                await BlueApp.fetchSenderPaymentCodes(lastSnappedTo);
+                await BlueApp.fetchSenderPaymentCodes(lastSnappedTo, connected);
                 console.debug('[refreshAllWalletTransactions] fetch payment codes took', (Date.now() - codesStart) / 1000, 'sec');
               })()
             : Promise.resolve();
@@ -327,11 +332,11 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
               paymentCodesPromise,
               (async () => {
                 const balanceStart = Date.now();
-                await BlueApp.fetchWalletBalances(lastSnappedTo);
+                await BlueApp.fetchWalletBalances(lastSnappedTo, connected);
                 console.debug('[refreshAllWalletTransactions] fetch balance took', (Date.now() - balanceStart) / 1000, 'sec');
 
                 const txStart = Date.now();
-                await BlueApp.fetchWalletTransactions(lastSnappedTo);
+                await BlueApp.fetchWalletTransactions(lastSnappedTo, connected);
                 console.debug('[refreshAllWalletTransactions] fetch tx took', (Date.now() - txStart) / 1000, 'sec');
               })(),
             ]);
@@ -367,7 +372,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         }
         _lastTimeTriedToRefetchWallet[walletID] = Date.now();
 
-        const connected = await BlueElectrum.ensureConnected();
+        const connected = await walletElectrum(wallets[index]).ensureConnected();
         if (!connected) {
           console.log('[fetchAndSaveWalletTransactions] could not establish Electrum connection, aborting');
           return;

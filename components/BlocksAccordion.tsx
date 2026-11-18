@@ -19,6 +19,7 @@ import dayjs from 'dayjs';
 
 import { useTheme } from './themes';
 import * as BlueElectrum from '../blue_modules/BlueElectrum';
+import type { TWalletElectrum } from '../class/wallets/legacy-wallet';
 import loc, { formatBalanceWithoutSuffix } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 
@@ -65,6 +66,8 @@ const computeBlockHeights = (txHeight: number, tip: number): number[] => {
 
 interface BlocksAccordionProps {
   txHash: string;
+  /** The Electrum client of the network of the transaction. Default: Bitcoin */
+  electrum?: Pick<TWalletElectrum, 'getConfirmedBlockHeight' | 'getBlockTimestamps'>;
   isSent: boolean;
   isExpanded: boolean;
   vsize?: number | null;
@@ -113,7 +116,16 @@ const renderBoldFormattedParts = (template: string, values: Record<string, strin
   return parts;
 };
 
-const BlocksAccordion: React.FC<BlocksAccordionProps> = ({ txHash, isSent, isExpanded, vsize, feeSats, feeRate, onPress }) => {
+const BlocksAccordion: React.FC<BlocksAccordionProps> = ({
+  txHash,
+  electrum = BlueElectrum,
+  isSent,
+  isExpanded,
+  vsize,
+  feeSats,
+  feeRate,
+  onPress,
+}) => {
   const { colors } = useTheme();
   const colorScheme = useColorScheme();
   const { width: windowWidth } = useWindowDimensions();
@@ -156,7 +168,7 @@ const BlocksAccordion: React.FC<BlocksAccordionProps> = ({ txHash, isSent, isExp
     setError(false);
     setLoading(true);
     try {
-      const blockInfo = await BlueElectrum.getConfirmedBlockHeight(fetchTxHash);
+      const blockInfo = await electrum.getConfirmedBlockHeight(fetchTxHash);
 
       if (fetchTxHash !== activeTxHashRef.current) return;
 
@@ -170,7 +182,7 @@ const BlocksAccordion: React.FC<BlocksAccordionProps> = ({ txHash, isSent, isExp
 
       let timestamps: Record<number, number> = {};
       try {
-        timestamps = await BlueElectrum.getBlockTimestamps(heights);
+        timestamps = await electrum.getBlockTimestamps(heights);
       } catch (e) {
         console.warn('BlocksAccordion: block timestamps fetch failed', e);
       }
@@ -192,7 +204,7 @@ const BlocksAccordion: React.FC<BlocksAccordionProps> = ({ txHash, isSent, isExp
         setLoading(false);
       }
     }
-  }, [txHash]);
+  }, [txHash, electrum]);
 
   const handleRetry = useCallback(() => {
     setError(false);
