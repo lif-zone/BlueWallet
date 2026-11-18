@@ -275,8 +275,35 @@ export function estimateCurrentBlockheight(): number {
   return tip.height;
 }
 
-// fee rate in sat/vbyte, as the LIF node asks
-export async function estimateFee(): Promise<number> {
-  let per_kb = await call('blockchain.estimatefee', [2]);
-  return Math.round(per_kb*1e8/1000);
+// The usual fee rate, in sat/vbyte: used when the LIF node cannot be asked
+const FEE_RATE_DEFAULT = 5000;
+
+// Fee rates in sat/vbyte for a fast, a medium and a slow confirmation. The
+// LIF node has one rate.
+export async function estimateFees(){
+  let rate = FEE_RATE_DEFAULT;
+  try {
+    let per_kb = await call('blockchain.estimatefee', [2]);
+    if (per_kb>0)
+      rate = Math.round(per_kb*1e8/1000);
+  } catch(e){
+    console.warn('LIF electrum: estimatefee', e);
+  }
+  return {fast: rate, medium: rate, slow: rate};
+}
+
+// true when the LIF node can be reached. Asked before a broadcast
+export async function ensureConnected(): Promise<boolean> {
+  try {
+    await conn();
+    return true;
+  } catch(e){
+    console.warn('LIF electrum: not connected', e);
+    return false;
+  }
+}
+
+// the offline mode of the Settings is for the Bitcoin servers only
+export async function isDisabled(): Promise<boolean> {
+  return false;
 }
