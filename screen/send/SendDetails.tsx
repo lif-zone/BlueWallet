@@ -119,6 +119,8 @@ const SendDetails = () => {
   const scrollIndex = useRef(0);
   /** Used so we only clear coin-selection (utxos) when the user switches wallet, not on first mount (e.g. Send opened from wallet details with pre-selected UTXOs). */
   const prevWalletIdForCoinResetRef = useRef<string | null>(null);
+  // the Electrum client the recommended fees were asked from
+  const feesElectrumRef = useRef<TWallet['electrum'] | null>(null);
   const { colors } = useTheme();
 
   // state
@@ -278,8 +280,16 @@ const SendDetails = () => {
     // we are ready!
     setIsLoading(false);
 
+    loadNetworkTransactionFees(newWallet);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // the recommended fees of the network of a wallet
+  const loadNetworkTransactionFees = (w: TWallet) => {
+    const storageKey = NetworkTransactionFee.storageKeyFor(w.network);
+    feesElectrumRef.current = w.electrum;
+
     // load cached fees
-    AsyncStorage.getItem(NetworkTransactionFee.StorageKey)
+    AsyncStorage.getItem(storageKey)
       .then(res => {
         if (!res) return;
         const fees = JSON.parse(res);
@@ -291,17 +301,17 @@ const SendDetails = () => {
     // load fresh fees from servers
 
     setNetworkTransactionFeesIsLoading(true);
-    NetworkTransactionFees.recommendedFees()
+    NetworkTransactionFees.recommendedFees(w.electrum)
       .then(async fees => {
         if (!fees?.fastestFee) return;
         setNetworkTransactionFees(fees);
-        await AsyncStorage.setItem(NetworkTransactionFee.StorageKey, JSON.stringify(fees));
+        await AsyncStorage.setItem(storageKey, JSON.stringify(fees));
       })
       .catch(e => console.log('loading recommendedFees error', e))
       .finally(() => {
         setNetworkTransactionFeesIsLoading(false);
       });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  };
 
   // change header and reset state on wallet change
   useEffect(() => {
@@ -320,6 +330,11 @@ const SendDetails = () => {
           : undefined,
     });
     prevWalletIdForCoinResetRef.current = currentId;
+
+    // a wallet of another network: its fees
+    if (feesElectrumRef.current && feesElectrumRef.current !== wallet.electrum) {
+      loadNetworkTransactionFees(wallet);
+    }
 
     wallet
       .fetchUtxo()

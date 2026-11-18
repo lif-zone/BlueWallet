@@ -3,7 +3,6 @@ import { useNavigation, RouteProp, StackActions, useIsFocused, useRoute } from '
 import * as bitcoin from 'bitcoinjs-lib';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import BlueCard from '../../components/BlueCard';
 import BlueText from '../../components/BlueText';
@@ -146,7 +145,7 @@ const PsbtWithHardwareWallet = () => {
       }
     }
     try {
-      if (!(await BlueElectrum.ensureConnected())) {
+      if (!(await wallet.electrum.ensureConnected())) {
         throw new Error(loc.errors.network);
       }
 

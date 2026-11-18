@@ -22,7 +22,8 @@ bitcoin.initEccLib(ecc);
  *  (legacy P2PKH compressed)
  */
 /**
- * What a wallet needs from an Electrum client: the functions of BlueElectrum that the wallet classes call.
+ * What a wallet needs from an Electrum client: the functions of BlueElectrum that the wallet classes call,
+ * and the ones the screens call for a wallet (fees, and the connection check before a broadcast).
  */
 export type TWalletElectrum = Pick<
   typeof BlueElectrum,
@@ -34,6 +35,9 @@ export type TWalletElectrum = Pick<
   | 'multiGetUtxoByAddress'
   | 'broadcastV2'
   | 'estimateCurrentBlockheight'
+  | 'estimateFees'
+  | 'ensureConnected'
+  | 'isDisabled'
 >;
 
 export class LegacyWallet extends AbstractWallet {
