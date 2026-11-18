@@ -19,3 +19,4 @@ import './wallets/slip39-wallets';
 import './wallets/multisig-hd-wallet';
 import './wallets/lightning-custodian-wallet';
 import './wallets/lightning-ark-wallet.ts';
+import '../lifcoin/index.ts';
