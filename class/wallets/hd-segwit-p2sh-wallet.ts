@@ -5,6 +5,7 @@ import { CoinSelectReturnInput } from 'coinselect';
 
 import ecc from '../../blue_modules/noble_ecc';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -117,3 +118,5 @@ export class HDSegwitP2SHWallet extends AbstractHDElectrumWallet {
     return true;
   }
 }
+
+registerWalletType({ type: HDSegwitP2SHWallet.type, load: json => HDSegwitP2SHWallet.fromJson(json) });

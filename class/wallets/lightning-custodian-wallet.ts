@@ -4,6 +4,7 @@ import { fetch } from '../../util/fetch';
 import { LegacyWallet } from './legacy-wallet';
 import { DecodedInvoice, LightningTransaction, Transaction } from './types';
 import type Lnurl from '../lnurl';
+import { registerWalletType } from '../wallet-registry';
 
 const _staticDecodedInvoiceCache: Record<string, DecodedInvoice> = {};
 
@@ -672,3 +673,30 @@ tx:
         timereceived: 1535024434 } ]
 
  */
+
+registerWalletType({
+  type: LightningCustodianWallet.type,
+  load: async json => {
+    const wallet = LightningCustodianWallet.fromJson(json);
+    let lndhub: string | undefined;
+    try {
+      // loaded here, not at the top: helpers/lndHub imports the app, which imports the wallets
+      const { getLNDHub } = await import('../../helpers/lndHub');
+      lndhub = await getLNDHub();
+    } catch (error) {
+      console.warn(error);
+    }
+
+    if (wallet.baseURI) {
+      wallet.setBaseURI(wallet.baseURI); // not really necessary, just for the sake of readability
+      console.log('using saved uri for for ln wallet:', wallet.baseURI);
+    } else if (lndhub) {
+      console.log('using wallet-wide settings ', lndhub, 'for ln wallet');
+      wallet.setBaseURI(lndhub);
+    } else {
+      console.log('wallet does not have a baseURI. Continuing init...');
+    }
+    wallet.init();
+    return wallet;
+  },
+});

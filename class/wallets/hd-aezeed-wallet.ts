@@ -6,6 +6,7 @@ import ecc from '../../blue_modules/noble_ecc';
 import { hexToUint8Array, uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet';
 import { errorMessage } from '../../helpers/errorMessage';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -197,3 +198,18 @@ export class HDAezeedWallet extends AbstractHDElectrumWallet {
     return true;
   }
 }
+
+registerWalletType({
+  type: HDAezeedWallet.type,
+  load: json => {
+    const wallet = HDAezeedWallet.fromJson(json);
+    // migrate password to this.passphrase field
+    // remove this code somewhere in year 2022
+    if (wallet.secret.includes(':')) {
+      const [mnemonic, passphrase] = wallet.secret.split(':');
+      wallet.secret = mnemonic;
+      wallet.passphrase = passphrase;
+    }
+    return wallet;
+  },
+});

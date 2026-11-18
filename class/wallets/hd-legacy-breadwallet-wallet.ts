@@ -7,6 +7,7 @@ import { ElectrumHistory } from '../../blue_modules/BlueElectrum';
 import ecc from '../../blue_modules/noble_ecc';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet';
 import { HDLegacyP2PKHWallet } from './hd-legacy-p2pkh-wallet';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -165,3 +166,5 @@ export class HDLegacyBreadwalletWallet extends HDLegacyP2PKHWallet {
     return super._addPsbtInput(psbt, input, sequence, masterFingerprintBuffer);
   }
 }
+
+registerWalletType({ type: HDLegacyBreadwalletWallet.type, load: json => HDLegacyBreadwalletWallet.fromJson(json) });

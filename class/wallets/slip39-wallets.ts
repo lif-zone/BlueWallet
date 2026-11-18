@@ -6,6 +6,7 @@ import { HDLegacyP2PKHWallet } from './hd-legacy-p2pkh-wallet';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet';
 import { HDSegwitP2SHWallet } from './hd-segwit-p2sh-wallet';
 import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
+import { registerWalletType } from '../wallet-registry';
 
 type TWalletThis = Omit<HDLegacyP2PKHWallet | HDSegwitP2SHWallet | HDSegwitBech32Wallet, 'secret'> & {
   secret: string[];
@@ -130,3 +131,7 @@ export class SLIP39SegwitBech32Wallet extends HDSegwitBech32Wallet {
 
   getID = SLIP39Mixin.getID;
 }
+
+registerWalletType({ type: SLIP39LegacyP2PKHWallet.type, load: json => SLIP39LegacyP2PKHWallet.fromJson(json) });
+registerWalletType({ type: SLIP39SegwitP2SHWallet.type, load: json => SLIP39SegwitP2SHWallet.fromJson(json) });
+registerWalletType({ type: SLIP39SegwitBech32Wallet.type, load: json => SLIP39SegwitBech32Wallet.fromJson(json) });

@@ -9,6 +9,7 @@ import { LegacyWallet } from './legacy-wallet';
 import { THDWalletForWatchOnly } from './types';
 import { HDTaprootWallet } from './hd-taproot-wallet';
 import { WalletDescriptor } from '../wallet-descriptor.ts';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -385,3 +386,13 @@ export class WatchOnlyWallet extends LegacyWallet {
     return super.wasEverUsed();
   }
 }
+
+registerWalletType({
+  type: WatchOnlyWallet.type,
+  load: json => {
+    const wallet = WatchOnlyWallet.fromJson(json);
+    wallet.init();
+    if (wallet.isHd() && !wallet.isXpubValid()) return undefined;
+    return wallet;
+  },
+});

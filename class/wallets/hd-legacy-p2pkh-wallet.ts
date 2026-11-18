@@ -5,6 +5,7 @@ import { CoinSelectReturnInput } from 'coinselect';
 import ecc from '../../blue_modules/noble_ecc';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet';
 import { hexToUint8Array } from '../../blue_modules/uint8array-extras';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -114,3 +115,5 @@ export class HDLegacyP2PKHWallet extends AbstractHDElectrumWallet {
     return true;
   }
 }
+
+registerWalletType({ type: HDLegacyP2PKHWallet.type, load: json => HDLegacyP2PKHWallet.fromJson(json) });
