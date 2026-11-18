@@ -5,7 +5,8 @@ import b58 from 'bs58check';
 import {HDSegwitBech32Wallet}
   from '../class/wallets/hd-segwit-bech32-wallet.ts';
 import type {TWalletElectrum} from '../class/wallets/legacy-wallet.ts';
-import {lif_network, LIF_COIN_TYPE, LIF_MAX_FEE_RATE} from './network.ts';
+import {lif_network, lif_coin, LIF_COIN_TYPE, LIF_MAX_FEE_RATE}
+  from './network.ts';
 import * as lif_electrum from './electrum.ts';
 
 const XPUB_VERSION = 0x0488b21e;
@@ -34,6 +35,10 @@ export class HDLifWallet extends HDSegwitBech32Wallet {
 
   get network(){
     return lif_network;
+  }
+
+  get coin(){
+    return lif_coin;
   }
 
   _newPsbt(){
