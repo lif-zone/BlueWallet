@@ -60,6 +60,29 @@ export class LegacyWallet extends AbstractWallet {
   }
 
   /**
+   * The network this wallet lives on: how its addresses are encoded, and which addresses it accepts.
+   * A wallet of another network overrides it.
+   */
+  get network(): bitcoin.Network {
+    return bitcoin.networks.bitcoin;
+  }
+
+  /**
+   * How a bech32 address of the wallet's network starts (`bc1` on Bitcoin)
+   */
+  get bech32Prefix(): string {
+    return this.network.bech32 + '1';
+  }
+
+  /**
+   * An empty transaction to fill and sign, on the wallet's network.
+   * A wallet of another network overrides it when its transactions need other limits (the highest fee rate allowed)
+   */
+  _newPsbt(): bitcoin.Psbt {
+    return new bitcoin.Psbt({ network: this.network });
+  }
+
+  /**
    * Simple function which says that we havent tried to fetch balance
    * for a long time
    *
@@ -106,6 +129,7 @@ export class LegacyWallet extends AbstractWallet {
       const keyPair = ECPair.fromWIF(this.secret);
       address = bitcoin.payments.p2pkh({
         pubkey: keyPair.publicKey,
+        network: this.network,
       }).address;
     } catch (err) {
       return false;
@@ -406,7 +430,8 @@ export class LegacyWallet extends AbstractWallet {
       const assumed = t.script?.length ?? 25; // lib assumes p2pkh
       if (address.startsWith('sp1')) return assumed > 34; // silent payment ends up as p2tr output
       try {
-        return assumed > bitcoin.address.toOutputScript(address.startsWith('bc1') ? address : t.address).length;
+        const script = bitcoin.address.toOutputScript(address.startsWith(this.bech32Prefix) ? address : t.address, this.network);
+        return assumed > script.length;
       } catch (_) {
         return false;
       }
@@ -474,9 +499,9 @@ export class LegacyWallet extends AbstractWallet {
     for (const t of _targets) {
       // bech32 addresses are case insensitive
       const address = t.address?.toLowerCase();
-      if (address?.startsWith('bc1')) {
+      if (address?.startsWith(this.bech32Prefix)) {
         // in case address is non-typical and takes more bytes than coinselect library anticipates by default
-        t.script = { length: bitcoin.address.toOutputScript(address).length + 3 };
+        t.script = { length: bitcoin.address.toOutputScript(address, this.network).length + 3 };
       } else if (address?.startsWith('sp1')) {
         // silent payment address ends up as p2tr output (34 bytes), sizing it the same way as bc1p address above
         t.script = { length: 34 + 3 };
@@ -535,7 +560,7 @@ export class LegacyWallet extends AbstractWallet {
     if (targets.length === 0) throw new Error('No destination provided');
     const { inputs, outputs, fee } = this.coinselect(utxos, targets, feeRate);
     sequence = sequence || 0xffffffff; // disable RBF by default
-    const psbt = new bitcoin.Psbt();
+    const psbt = this._newPsbt();
     let c = 0;
     let keyPair: Signer | null = null;
 
@@ -612,9 +637,9 @@ export class LegacyWallet extends AbstractWallet {
    */
   isAddressValid(address: string): boolean {
     try {
-      bitcoin.address.toOutputScript(address); // throws, no?
+      bitcoin.address.toOutputScript(address, this.network); // throws, no?
 
-      if (!address.toLowerCase().startsWith('bc1')) return true;
+      if (!address.toLowerCase().startsWith(this.bech32Prefix)) return true;
       const decoded = bitcoin.address.fromBech32(address);
       if (decoded.version === 0) return true;
       if (decoded.version === 1 && decoded.data.length !== 32) return false;

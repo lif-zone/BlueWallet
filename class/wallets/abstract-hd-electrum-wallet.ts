@@ -1074,7 +1074,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     }
 
     sequence = sequence || AbstractHDElectrumWallet.defaultRBFSequence;
-    let psbt = new bitcoin.Psbt();
+    let psbt = this._newPsbt();
     let c = 0;
     const keypairs: Record<number, ECPairInterface> = {};
 
@@ -1239,6 +1239,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
   _nodeToBech32SegwitAddress(hdNode: BIP32Interface): string {
     const { address } = bitcoin.payments.p2wpkh({
       pubkey: hdNode.publicKey,
+      network: this.network,
     });
 
     if (!address) {
@@ -1251,6 +1252,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
   _nodeToLegacyAddress(hdNode: BIP32Interface): string {
     const { address } = bitcoin.payments.p2pkh({
       pubkey: hdNode.publicKey,
+      network: this.network,
     });
 
     if (!address) {
@@ -1265,7 +1267,8 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
    */
   _nodeToP2shSegwitAddress(hdNode: BIP32Interface): string {
     const { address } = bitcoin.payments.p2sh({
-      redeem: bitcoin.payments.p2wpkh({ pubkey: hdNode.publicKey }),
+      redeem: bitcoin.payments.p2wpkh({ pubkey: hdNode.publicKey, network: this.network }),
+      network: this.network,
     });
 
     if (!address) {
