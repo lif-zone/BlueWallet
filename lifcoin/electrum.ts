@@ -120,21 +120,10 @@ function history_set(address: string, history: any[]): ElectrumHistory[] {
   return history||[];
 }
 
-// The balance of an address is summed here from its unspent outputs: the
-// get_balance of the LIF node gives the total ever received (it does not
-// yet subtract what was spent: blockstream_metas_sum() in
-// lif-coin/lib/node/http.js).
 async function balance_get(address: string){
-  let unspent = await call('blockchain.scripthash.listunspent',
+  let balance = await call('blockchain.scripthash.get_balance',
     [address_sh(address)]);
-  let balance = {confirmed: 0, unconfirmed: 0};
-  for (let u of unspent){
-    if (u.height>0)
-      balance.confirmed += u.value;
-    else
-      balance.unconfirmed += u.value;
-  }
-  return balance;
+  return {confirmed: +balance.confirmed, unconfirmed: +balance.unconfirmed};
 }
 
 export async function getBalanceByAddress(address: string){
