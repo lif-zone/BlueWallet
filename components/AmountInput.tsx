@@ -27,8 +27,8 @@ import {
 } from '../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../blue_modules/hapticFeedback';
 import confirm from '../helpers/confirm';
-import loc, { formatBalancePlain, formatBalanceWithoutSuffix, removeTrailingZeros } from '../loc';
-import { BitcoinUnit } from '../models/bitcoinUnits';
+import loc, { formatBalancePlain, formatBalanceWithoutSuffix, removeTrailingZeros, unitLabel } from '../loc';
+import { BitcoinUnit, TCoin } from '../models/bitcoinUnits';
 import Badge from './Badge';
 import BlueText from './BlueText';
 import Icon from './Icon';
@@ -98,6 +98,10 @@ type AmountInputProps = Omit<TextInputProps, 'onChangeText' | 'value'> & {
    * When true, shows ≈ prefix for maxSendableAmount (indicates estimate).
    */
   isMaxAmountEstimate?: boolean;
+  /**
+   * The coin of the amount (`wallet.coin`). Undefined: Bitcoin
+   */
+  coin?: TCoin;
 };
 
 export const AmountInput: React.FC<AmountInputProps> = props => {
@@ -112,6 +116,7 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
     isLoading = false,
     maxSendableAmount,
     isMaxAmountEstimate,
+    coin,
     style: styleOverride,
     ...otherProps
   } = props;
@@ -167,10 +172,10 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
           res = fiatToBTC(Number(amount));
         }
         res = removeTrailingZeros(res);
-        return `${res} ${loc.units[BitcoinUnit.BTC]}`;
+        return `${res} ${unitLabel(BitcoinUnit.BTC, coin)}`;
       }
     }
-  }, [amount, unit]);
+  }, [amount, unit, coin]);
 
   useEffect(() => {
     (async () => {
@@ -429,13 +434,13 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
                     {(isMaxAmountEstimate ? '≈ ' : '') +
                       removeTrailingZeros(new BigNumber(maxSendableAmount).dividedBy(100000000).toFixed(8)) +
                       ' ' +
-                      loc.units[BitcoinUnit.BTC]}
+                      unitLabel(BitcoinUnit.BTC, coin)}
                   </Text>
                 )}
               </Pressable>
             )}
             {unit !== BitcoinUnit.LOCAL_CURRENCY && amount !== BitcoinUnit.MAX && (
-              <Text style={[styles.cryptoCurrency, stylesHook.cryptoCurrency]}>{loc.units[unit]}</Text>
+              <Text style={[styles.cryptoCurrency, stylesHook.cryptoCurrency]}>{unitLabel(unit, coin)}</Text>
             )}
           </View>
           <View style={styles.secondaryRoot}>

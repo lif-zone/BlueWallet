@@ -69,7 +69,7 @@ const CoinControlOutputSheet: React.FC = () => {
     debouncedSaveMemo.current(memo);
   }, [memo]);
 
-  const amount = formatBalance(utxo.value, wallet?.getPreferredBalanceUnit?.() ?? BitcoinUnit.BTC, true);
+  const amount = formatBalance(utxo.value, wallet?.getPreferredBalanceUnit?.() ?? BitcoinUnit.BTC, true, wallet?.coin);
   const color = `#${utxo.txid.substring(0, 6)}`;
   const receivedDate = useMemo(() => {
     let timestamp: number | undefined;

@@ -13,7 +13,7 @@ import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import { useTheme } from '../../components/themes';
 import { useStorage } from '../../hooks/context/useStorage';
 import loc, { formatBalance } from '../../loc';
-import { BitcoinUnit } from '../../models/bitcoinUnits';
+import { BitcoinUnit, TCoin } from '../../models/bitcoinUnits';
 import { goFromCoinControlToSendDetails } from '../../navigation/goFromCoinControlToSendDetails';
 import { CoinControlSortDirection, CoinControlSortType, SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList';
 
@@ -81,6 +81,7 @@ const AnimatedTip: React.FC<{ text: string }> = ({ text }) => {
 type TOutputListProps = {
   item: Utxo;
   balanceUnit: string;
+  coin?: TCoin;
   oMemo?: string;
   frozen: boolean;
   change: boolean;
@@ -94,6 +95,7 @@ type TOutputListProps = {
 const OutputList: React.FC<TOutputListProps> = ({
   item: { address, txid, value },
   balanceUnit = BitcoinUnit.BTC,
+  coin,
   oMemo,
   frozen,
   change,
@@ -107,7 +109,7 @@ const OutputList: React.FC<TOutputListProps> = ({
   const { txMetadata } = useStorage();
   const memo = oMemo || txMetadata[txid]?.memo || '';
   const color = `#${txid.substring(0, 6)}`;
-  const amount = formatBalance(value, balanceUnit, true);
+  const amount = formatBalance(value, balanceUnit, true, coin);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   let onPress = onOpen;
@@ -277,7 +279,7 @@ const CoinControl: React.FC = () => {
     const summ = selected.reduce((prev, curr) => {
       return prev + (utxos.find(({ txid, vout }) => `${txid}:${vout}` === curr) as Utxo).value;
     }, 0);
-    const value = formatBalance(summ, wallet.getPreferredBalanceUnit(), true);
+    const value = formatBalance(summ, wallet.getPreferredBalanceUnit(), true, wallet.coin);
     return loc.formatString(loc.cc.selected_summ, { value });
   }, [selected, utxos, wallet]);
 
@@ -320,6 +322,7 @@ const CoinControl: React.FC = () => {
       <OutputList
         key={key}
         balanceUnit={wallet.getPreferredBalanceUnit()}
+        coin={wallet.coin}
         item={item}
         oMemo={memo}
         frozen={oFrozen}

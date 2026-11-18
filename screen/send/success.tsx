@@ -7,7 +7,8 @@ import BlueCard from '../../components/BlueCard';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
-import loc from '../../loc';
+import loc, { unitLabel } from '../../loc';
+import { useStorage } from '../../hooks/context/useStorage';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import HandOffComponent from '../../components/HandOffComponent';
 import { HandOffActivityType } from '../../components/types';
@@ -25,6 +26,8 @@ const Success = () => {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavigationProps>();
   const { amount, fee, amountUnit = BitcoinUnit.BTC, invoiceDescription = '', txid, walletID, walletType } = route.params || {};
+  const { wallets } = useStorage();
+  const coin = wallets.find(w => w.getID() === walletID)?.coin;
   const stylesHook = StyleSheet.create({
     root: {
       backgroundColor: colors.elevated,
@@ -87,7 +90,7 @@ export const SuccessView = ({ amount, amountUnit, fee, invoiceDescription, shoul
   switch (amountUnit) {
     case BitcoinUnit.BTC:
     case BitcoinUnit.SATS:
-      unit = loc.units[amountUnit];
+      unit = unitLabel(amountUnit, coin);
       break;
   }
 
@@ -114,7 +117,7 @@ export const SuccessView = ({ amount, amountUnit, fee, invoiceDescription, shoul
           </View>
           {(fee ?? 0) > 0 && (
             <Text style={styles.feeText}>
-              {loc.send.create_fee}: {new BigNumber(fee ?? 0).toFixed(8)} {loc.units[BitcoinUnit.BTC]}
+              {loc.send.create_fee}: {new BigNumber(fee ?? 0).toFixed(8)} {unitLabel(BitcoinUnit.BTC, coin)}
             </Text>
           )}
           <Text numberOfLines={0} style={styles.feeText}>

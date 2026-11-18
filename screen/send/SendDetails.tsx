@@ -1367,7 +1367,7 @@ const SendDetails = () => {
     scrollIndex.current = index;
   };
 
-  const formatFee = (fee: number) => formatBalance(fee, feeUnit!, true);
+  const formatFee = (fee: number) => formatBalance(fee, feeUnit!, true, wallet?.coin);
 
   const stylesHook = StyleSheet.create({
     root: {
@@ -1469,6 +1469,7 @@ const SendDetails = () => {
         <View style={styles.amountInputContainer}>
           <AmountInput.AmountInput
             isLoading={isLoading}
+            coin={wallet?.coin}
             amount={item.amount ? item.amount.toString() : undefined}
             onAmountUnitChange={(unit: BitcoinUnit) => {
               setAddresses(addrs => {
