@@ -480,7 +480,8 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
   const hideBalanceInRecentMenu = wallet.hideBalance;
   const hideFromRecentMenu = wallet.getHideTransactionsInWalletsList?.() ?? false;
   const recentWallet = useMemo(() => {
-    const formattedBalance = !hideBalanceInRecentMenu && Number.isFinite(balance) ? formatBalance(balance, displayUnit, true) : '';
+    const formattedBalance =
+      !hideBalanceInRecentMenu && Number.isFinite(balance) ? formatBalance(balance, displayUnit, true, wallet.coin) : '';
     const title = formattedBalance ? `${wallet.getLabel()} — ${formattedBalance}` : wallet.getLabel();
     return { id: `wallet:${walletID}`, kind: 'wallet' as const, title, walletID };
   }, [balance, displayUnit, hideBalanceInRecentMenu, wallet, walletID]);
@@ -509,7 +510,7 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
   const walletBalance = useMemo(() => {
     if (wallet.hideBalance) return '';
     if (!Number.isFinite(balance)) return '';
-    const formatted = formatBalance(balance, displayUnit, true);
+    const formatted = formatBalance(balance, displayUnit, true, wallet.coin);
     return formatted || '0';
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet, wallet.hideBalance, displayUnit, balance]);

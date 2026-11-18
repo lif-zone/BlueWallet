@@ -775,6 +775,8 @@ export class BlueApp {
   getBalance = (): number => {
     let finalBalance = 0;
     for (const wal of this.wallets) {
+      // the total is in Bitcoin: a wallet of another coin is not a part of it
+      if (wal.coin) continue;
       finalBalance += wal.getBalance();
     }
     return finalBalance;

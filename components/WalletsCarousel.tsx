@@ -344,7 +344,7 @@ export const WalletCarouselItem: React.FC<WalletCarouselItemProps> = ({
     [colors.inverseForegroundColor, direction],
   );
   const previousBalance = useRef<string | undefined>(undefined);
-  const balance = !hideBalance && formatBalance(Number(item.getBalance()), item.getPreferredBalanceUnit(), true);
+  const balance = !hideBalance && formatBalance(Number(item.getBalance()), item.getPreferredBalanceUnit(), true, item.coin);
   const safeBalance = balance || undefined;
 
   const animatePressScale = useCallback(

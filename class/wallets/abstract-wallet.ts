@@ -2,7 +2,7 @@ import b58 from 'bs58check';
 import { sha256 } from '@noble/hashes/sha256';
 import wif from 'wif';
 
-import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
+import { BitcoinUnit, Chain, TCoin } from '../../models/bitcoinUnits';
 import { CreateTransactionResult, CreateTransactionUtxo, Transaction, Utxo } from './types';
 import { hexToUint8Array, concatUint8Arrays, uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
 
@@ -119,6 +119,14 @@ export class AbstractWallet {
   getBalance(): number {
     const unconfirmed = this.getUnconfirmedBalance();
     return this.balance + (unconfirmed < 0 ? unconfirmed : 0);
+  }
+
+  /**
+   * The coin the amounts of this wallet are in. Undefined: Bitcoin.
+   * A wallet of another network overrides it.
+   */
+  get coin(): TCoin | undefined {
+    return undefined;
   }
 
   getPreferredBalanceUnit(): BitcoinUnit {
