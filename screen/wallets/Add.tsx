@@ -1,21 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, Linking, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { Layout } from 'react-native-reanimated';
-import assert from 'assert';
 
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import BlueButtonLink from '../../components/BlueButtonLink';
 import BlueFormLabel from '../../components/BlueFormLabel';
 import BlueText from '../../components/BlueText';
-import { HDLegacyP2PKHWallet } from '../../class/wallets/hd-legacy-p2pkh-wallet';
-import { HDSegwitBech32Wallet } from '../../class/wallets/hd-segwit-bech32-wallet';
-import { HDTaprootWallet } from '../../class/wallets/hd-taproot-wallet';
-import { LightningCustodianWallet } from '../../class/wallets/lightning-custodian-wallet';
-import presentAlert from '../../components/Alert';
+import { getAddWalletOptions, TAddWalletContext, TAddWalletOption } from '../../class/wallet-registry';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 import { useTheme } from '../../components/themes';
-import WalletButton from '../../components/WalletButton';
+import WalletButton, { ButtonDetails } from '../../components/WalletButton';
 import loc from '../../loc';
 import { Chain } from '../../models/bitcoinUnits';
 import { useStorage } from '../../hooks/context/useStorage';
@@ -25,25 +19,16 @@ import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
+import './addWalletOptions';
 import { hexToUint8Array } from '../../blue_modules/uint8array-extras';
-import { LightningArkWallet } from '../../class/wallets/lightning-ark-wallet.ts';
 import { resetScanWasBBQR } from '../../helpers/scan-qr.ts';
-import { errorMessage } from '../../helpers/errorMessage';
-
-const ButtonSelected = {
-  ONCHAIN: Chain.ONCHAIN,
-  OFFCHAIN: Chain.OFFCHAIN,
-  VAULT: 'VAULT',
-  ARK: 'ARK',
-} as const;
-type ButtonSelected = (typeof ButtonSelected)[keyof typeof ButtonSelected];
 
 interface State {
   isLoading: boolean;
   walletBaseURI: string;
   selectedIndex: number;
   label: string;
-  selectedWalletType: ButtonSelected;
+  selectedWalletType: string;
 }
 
 const ActionTypes = {
@@ -59,26 +44,14 @@ type TAction =
   | { type: typeof ActionTypes.SET_LOADING; payload: boolean }
   | { type: typeof ActionTypes.SET_WALLET_BASE_URI | typeof ActionTypes.SET_LABEL; payload: string }
   | { type: typeof ActionTypes.SET_SELECTED_INDEX; payload: number }
-  | { type: typeof ActionTypes.SET_SELECTED_WALLET_TYPE; payload: ButtonSelected };
-
-const index2walletType: Record<number, { text: string; subtitle: string; walletType: string }> = {
-  0: { subtitle: 'p2wpkh/HD', text: `${loc.multisig.native_segwit_title}`, walletType: HDSegwitBech32Wallet.type },
-  1: { subtitle: 'p2pkh/HD', text: `${loc.multisig.legacy_title}`, walletType: HDLegacyP2PKHWallet.type },
-  2: { subtitle: 'p2tr/HD', text: 'Taproot', walletType: HDTaprootWallet.type },
-  3: {
-    // lightning
-    subtitle: LightningCustodianWallet.subtitleReadable,
-    text: LightningCustodianWallet.typeReadable,
-    walletType: LightningCustodianWallet.type,
-  },
-};
+  | { type: typeof ActionTypes.SET_SELECTED_WALLET_TYPE; payload: string };
 
 const initialState: State = {
   isLoading: true,
   walletBaseURI: '',
   selectedIndex: 0,
   label: '',
-  selectedWalletType: ButtonSelected.ONCHAIN,
+  selectedWalletType: Chain.ONCHAIN,
 };
 
 const walletReducer = (state: State, action: TAction): State => {
@@ -88,7 +61,7 @@ const walletReducer = (state: State, action: TAction): State => {
     case ActionTypes.SET_WALLET_BASE_URI:
       return { ...state, walletBaseURI: action.payload };
     case ActionTypes.SET_SELECTED_INDEX:
-      return { ...state, selectedIndex: action.payload, selectedWalletType: ButtonSelected.ONCHAIN };
+      return { ...state, selectedIndex: action.payload, selectedWalletType: Chain.ONCHAIN };
     case ActionTypes.SET_LABEL:
       return { ...state, label: action.payload };
     case ActionTypes.SET_SELECTED_WALLET_TYPE:
@@ -108,7 +81,8 @@ const WalletsAdd: React.FC = () => {
 
   // State
   const [state, dispatch] = useReducer(walletReducer, initialState);
-  const [backdoorPressed, setBackdoorPressed] = useState(0);
+  // how many times the button of each option was pressed
+  const [pressCounts, setPressCounts] = useState<Record<string, number>>({});
   const isLoading = state.isLoading;
   const walletBaseURI = state.walletBaseURI;
   const label = state.label;
@@ -123,16 +97,7 @@ const WalletsAdd: React.FC = () => {
     selectedWalletType: routeSelectedWalletType,
   } = route.params || {};
   const selectedIndex = typeof routeSelectedIndex === 'number' ? routeSelectedIndex : state.selectedIndex;
-  const selectedWalletType: ButtonSelected =
-    routeSelectedWalletType === Chain.OFFCHAIN
-      ? ButtonSelected.OFFCHAIN
-      : routeSelectedWalletType === Chain.ONCHAIN
-        ? ButtonSelected.ONCHAIN
-        : routeSelectedWalletType === ButtonSelected.VAULT
-          ? ButtonSelected.VAULT
-          : routeSelectedWalletType === ButtonSelected.ARK
-            ? ButtonSelected.ARK
-            : state.selectedWalletType;
+  const selectedWalletType: string = routeSelectedWalletType ?? state.selectedWalletType;
   const entropy = entropyHex ? hexToUint8Array(entropyHex) : undefined;
   const entropyBytesProvided = providedEntropyBytes ?? 0;
   const { navigate, goBack, setParams } = useNavigation<NavigationProps>();
@@ -164,11 +129,9 @@ const WalletsAdd: React.FC = () => {
   const hasStoredLndHub = (walletBaseURI ?? '').trim().length > 0;
 
   const setSelectedWalletType = useCallback(
-    (value: ButtonSelected) => {
-      const paramWalletType: Chain | 'VAULT' | 'ARK' =
-        value === ButtonSelected.ONCHAIN ? Chain.ONCHAIN : value === ButtonSelected.OFFCHAIN ? Chain.OFFCHAIN : value;
+    (value: string) => {
       setParams({
-        selectedWalletType: paramWalletType,
+        selectedWalletType: value,
         selectedIndex,
       });
     },
@@ -176,7 +139,7 @@ const WalletsAdd: React.FC = () => {
   );
 
   const confirmResetEntropy = useCallback(
-    (newWalletType: ButtonSelected) => {
+    (newWalletType: string) => {
       if (entropy || words) {
         Alert.alert(
           loc.wallets.add_entropy_reset_title,
@@ -204,14 +167,6 @@ const WalletsAdd: React.FC = () => {
     [entropy, setParams, setSelectedWalletType, words],
   );
 
-  const handleOnLightningArkButtonPressed = useCallback(() => {
-    confirmResetEntropy(ButtonSelected.ARK);
-  }, [confirmResetEntropy]);
-
-  const handleOnLightningButtonPressed = useCallback(() => {
-    confirmResetEntropy(ButtonSelected.OFFCHAIN);
-  }, [confirmResetEntropy]);
-
   useEffect(() => {
     // resetting format of last camera qr scan, in case user will use camera to
     // scan his wallet backup to import wallet
@@ -235,156 +190,46 @@ const WalletsAdd: React.FC = () => {
     dispatch({ type: 'SET_LABEL', payload: value });
   };
 
+  // what the options of the screen get, to decide if they are shown and to create their wallet
+  const addWalletContext: TAddWalletContext = {
+    label,
+    selectedId: selectedWalletType,
+    pressCount: id => pressCounts[id] ?? 0,
+    entropy,
+    selectedIndex,
+    walletBaseURI,
+    hasStoredLndHub,
+    setIsLoading,
+    addWallet,
+    saveToDisk,
+    navigate: navigate as TAddWalletContext['navigate'],
+    goBack,
+  };
+  const addWalletOptions = getAddWalletOptions().filter(option => option.isVisible?.(addWalletContext) ?? true);
+  const selectedOption = getAddWalletOptions().find(option => option.id === selectedWalletType);
+
   const createWallet = async () => {
     setIsLoading(true);
-
-    if (selectedWalletType === ButtonSelected.OFFCHAIN) {
-      createLightningWallet();
-    } else if (selectedWalletType === ButtonSelected.ARK) {
-      createLightningArkWallet();
-    } else if (selectedWalletType === ButtonSelected.ONCHAIN) {
-      let w: HDSegwitBech32Wallet | HDLegacyP2PKHWallet | HDTaprootWallet;
-
-      for (let c = 0; c < Object.values(index2walletType).length; c++) {
-        if (c === selectedIndex) {
-          switch (index2walletType[c].walletType) {
-            case HDTaprootWallet.type:
-              w = new HDTaprootWallet();
-              w.setLabel(label || loc.wallets.details_title);
-              break;
-            case HDLegacyP2PKHWallet.type:
-              w = new HDLegacyP2PKHWallet();
-              w.setLabel(label || loc.wallets.details_title);
-              break;
-            case HDSegwitBech32Wallet.type:
-              w = new HDSegwitBech32Wallet();
-              w.setLabel(label || loc.wallets.details_title);
-              break;
-          }
-        }
-      }
-
-      assert(w!, 'Internal error: could not decide which wallet to create');
-
-      if (selectedWalletType === ButtonSelected.ONCHAIN) {
-        if (entropy) {
-          try {
-            await w.generateFromEntropy(entropy);
-          } catch (e) {
-            console.log(String(e));
-            presentAlert({ message: String(e) });
-            return;
-          }
-        } else {
-          await w.generate();
-        }
-        addWallet(w);
-        await saveToDisk();
-
-        triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-        if (w.type === HDLegacyP2PKHWallet.type || w.type === HDSegwitBech32Wallet.type || w.type === HDTaprootWallet.type) {
-          navigate('PleaseBackup', {
-            walletID: w.getID(),
-          });
-        } else {
-          goBack();
-        }
-      }
-    } else if (selectedWalletType === ButtonSelected.VAULT) {
-      setIsLoading(false);
-      navigate('WalletsAddMultisig', { walletLabel: label.trim().length > 0 ? label : loc.multisig.default_label });
-    }
-  };
-
-  const createLightningWallet = async () => {
-    const wallet = new LightningCustodianWallet();
-    wallet.setLabel(label || loc.wallets.details_title);
-
-    try {
-      const lndhub = walletBaseURI?.trim();
-      if (lndhub) {
-        const isValidNodeAddress = await LightningCustodianWallet.isValidNodeAddress(lndhub);
-        if (isValidNodeAddress) {
-          wallet.setBaseURI(lndhub);
-          await wallet.init();
-        } else {
-          throw new Error('The provided node address is not valid LNDHub node.');
-        }
-      }
-      await wallet.createAccount();
-      await wallet.authorize();
-    } catch (Err) {
-      setIsLoading(false);
-      console.warn('lnd create failure', Err);
-      if (errorMessage(Err)) {
-        return presentAlert({ message: errorMessage(Err) });
-      } else {
-        return presentAlert({ message: loc.wallets.add_lndhub_error });
-      }
-      // giving app, not adding anything
-    }
-
-    await wallet.generate();
-    addWallet(wallet);
-    await saveToDisk();
-
-    triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-    navigate('PleaseBackupLNDHub', {
-      walletID: wallet.getID(),
-    });
-  };
-
-  const createLightningArkWallet = async () => {
-    const wallet = new LightningArkWallet();
-    wallet.setLabel(label || loc.wallets.details_title);
-    try {
-      await wallet.generate();
-    } catch (Err) {
-      setIsLoading(false);
-      console.warn('lightning ark create failure', Err);
-      return presentAlert({ message: errorMessage(Err) });
-    }
-
-    addWallet(wallet);
-    await saveToDisk();
-
-    triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-    navigate('PleaseBackupLNDHub', {
-      walletID: wallet.getID(),
-    });
+    await selectedOption?.create(addWalletContext);
   };
 
   const navigateToImportWallet = () => {
     navigate('ImportWallet');
   };
 
-  const handleOnVaultButtonPressed = () => {
+  const handleOnOptionPressed = (option: TAddWalletOption) => {
+    setPressCounts(prevState => ({ ...prevState, [option.id]: (prevState[option.id] ?? 0) + 1 }));
     Keyboard.dismiss();
-    confirmResetEntropy(ButtonSelected.VAULT);
-  };
-
-  const handleOnBitcoinButtonPressed = () => {
-    setBackdoorPressed(prevState => prevState + 1);
-    Keyboard.dismiss();
-    setSelectedWalletType(ButtonSelected.ONCHAIN);
+    if (option.keepsEntropy) {
+      setSelectedWalletType(option.id);
+    } else {
+      confirmResetEntropy(option.id);
+    }
   };
 
   const onLearnMorePressed = () => {
     Linking.openURL('https://bluewallet.io/lightning/');
   };
-
-  const LightningButtonMemo = useMemo(
-    () => (
-      <WalletButton
-        buttonType="Lightning"
-        testID="ActivateLightningButton"
-        active={selectedWalletType === ButtonSelected.OFFCHAIN}
-        onPress={handleOnLightningButtonPressed}
-        size={styles.button}
-      />
-    ),
-    [selectedWalletType, handleOnLightningButtonPressed],
-  );
 
   return (
     <Animated.View layout={layoutTransition} style={styles.flex1}>
@@ -412,32 +257,18 @@ const WalletsAdd: React.FC = () => {
         </View>
         <BlueFormLabel>{loc.wallets.add_wallet_type}</BlueFormLabel>
         <View style={styles.buttons}>
-          <WalletButton
-            buttonType="Bitcoin"
-            testID="ActivateBitcoinButton"
-            active={selectedWalletType === ButtonSelected.ONCHAIN}
-            onPress={handleOnBitcoinButtonPressed}
-            size={styles.button}
-          />
-          <WalletButton
-            buttonType="Vault"
-            testID="ActivateVaultButton"
-            active={selectedWalletType === ButtonSelected.VAULT}
-            onPress={handleOnVaultButtonPressed}
-            size={styles.button}
-          />
-          {backdoorPressed >= 20 ? (
+          {addWalletOptions.map(option => (
             <WalletButton
-              buttonType="LightningArk"
-              testID="ActivateLightningArkButton"
-              active={selectedWalletType === ButtonSelected.ARK}
-              onPress={handleOnLightningArkButtonPressed}
+              key={option.id}
+              details={option.button as ButtonDetails}
+              testID={option.testID}
+              active={selectedWalletType === option.id}
+              onPress={() => handleOnOptionPressed(option)}
               size={styles.button}
             />
-          ) : null}
-          {(selectedWalletType === ButtonSelected.OFFCHAIN || hasStoredLndHub) && LightningButtonMemo}
+          ))}
         </View>
-        {entropy && entropyBytesProvided > 0 && selectedWalletType === ButtonSelected.ONCHAIN ? (
+        {entropy && entropyBytesProvided > 0 && selectedWalletType === Chain.ONCHAIN ? (
           <View style={styles.entropyMixed} testID="EntropyMixedIndicator">
             <Icon name="dice" type="font-awesome-6" size={16} color={colors.alternativeTextColor} />
             <BlueText style={[styles.entropyMixedText, stylesHook.entropyMixedText]}>
@@ -446,7 +277,7 @@ const WalletsAdd: React.FC = () => {
           </View>
         ) : null}
         <View style={styles.advanced}>
-          {selectedWalletType === ButtonSelected.OFFCHAIN && (
+          {selectedWalletType === Chain.OFFCHAIN && (
             <>
               <BlueSpacing20 />
               <View style={styles.lndhubTitle}>
@@ -479,9 +310,7 @@ const WalletsAdd: React.FC = () => {
               <Button
                 testID="Create"
                 title={loc.wallets.add_create}
-                disabled={
-                  !selectedWalletType || (selectedWalletType === ButtonSelected.OFFCHAIN && (walletBaseURI ?? '').trim().length === 0)
-                }
+                disabled={!selectedOption || (selectedOption.isCreateDisabled?.(addWalletContext) ?? false)}
                 onPress={createWallet}
               />
 

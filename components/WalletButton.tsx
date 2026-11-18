@@ -5,7 +5,7 @@ import { useLocale } from '@react-navigation/native';
 import loc from '../loc';
 import { Theme, useTheme } from './themes';
 
-interface ButtonDetails {
+export interface ButtonDetails {
   image: ImageSourcePropType;
   title: string;
   explain: string;
@@ -13,7 +13,9 @@ interface ButtonDetails {
 }
 
 interface WalletButtonProps {
-  buttonType: keyof typeof buttonDetails;
+  /** one of the buttons known here, or `details` for another one */
+  buttonType?: keyof typeof buttonDetails;
+  details?: ButtonDetails;
   testID?: string;
   onPress: () => void;
   size: {
@@ -23,7 +25,7 @@ interface WalletButtonProps {
   active: boolean;
 }
 
-const buttonDetails: Record<string, ButtonDetails> = {
+export const buttonDetails: Record<string, ButtonDetails> = {
   Bitcoin: {
     image: require('../img/addWallet/bitcoin.png'),
     title: loc.wallets.add_bitcoin,
@@ -50,8 +52,8 @@ const buttonDetails: Record<string, ButtonDetails> = {
   },
 };
 
-const WalletButton: React.FC<WalletButtonProps> = ({ buttonType, testID, onPress, size, active }) => {
-  const details = buttonDetails[buttonType];
+const WalletButton: React.FC<WalletButtonProps> = ({ buttonType, details: customDetails, testID, onPress, size, active }) => {
+  const details = customDetails ?? buttonDetails[buttonType!];
   const { colors } = useTheme();
   const { direction } = useLocale();
   const borderColor = active ? colors[details.borderColorActive] : colors.buttonDisabledBackgroundColor;

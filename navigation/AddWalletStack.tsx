@@ -25,7 +25,8 @@ export type AddWalletStackParamList = {
     providedEntropyBytes?: number;
     words?: number;
     selectedIndex?: number;
-    selectedWalletType?: Chain | 'VAULT' | 'ARK';
+    /** `id` of an option of the screen: see class/wallet-registry.ts */
+    selectedWalletType?: string;
     headerRight?: HeaderRightRenderer;
     statusBarStyle?: NativeStackNavigationOptions['statusBarStyle'];
   };
