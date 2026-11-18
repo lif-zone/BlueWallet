@@ -6,6 +6,7 @@ import ecc from '../../blue_modules/noble_ecc';
 import { LegacyWallet } from './legacy-wallet';
 import { CreateTransactionResult, CreateTransactionUtxo } from './types';
 import { hexToUint8Array } from '../../blue_modules/uint8array-extras';
+import { registerWalletType } from '../wallet-registry';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -163,3 +164,5 @@ export class SegwitP2SHWallet extends LegacyWallet {
     return true;
   }
 }
+
+registerWalletType({ type: SegwitP2SHWallet.type, load: json => SegwitP2SHWallet.fromJson(json) });

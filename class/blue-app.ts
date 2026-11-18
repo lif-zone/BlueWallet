@@ -10,26 +10,12 @@ import * as encryption from '../blue_modules/encryption';
 import presentAlert from '../components/Alert';
 import loc from '../loc';
 import { randomBytes } from './rng';
-import { HDAezeedWallet } from './wallets/hd-aezeed-wallet';
-import { HDLegacyBreadwalletWallet } from './wallets/hd-legacy-breadwallet-wallet';
-import { HDLegacyElectrumSeedP2PKHWallet } from './wallets/hd-legacy-electrum-seed-p2pkh-wallet';
-import { HDLegacyP2PKHWallet } from './wallets/hd-legacy-p2pkh-wallet';
-import { HDSegwitBech32Wallet } from './wallets/hd-segwit-bech32-wallet';
-import { HDSegwitElectrumSeedP2WPKHWallet } from './wallets/hd-segwit-electrum-seed-p2wpkh-wallet';
-import { HDSegwitP2SHWallet } from './wallets/hd-segwit-p2sh-wallet';
+import { getWalletType } from './wallet-registry';
+import './wallet-types';
 import { LegacyWallet } from './wallets/legacy-wallet';
-import { LightningCustodianWallet } from './wallets/lightning-custodian-wallet';
-import { MultisigHDWallet } from './wallets/multisig-hd-wallet';
-import { SegwitBech32Wallet } from './wallets/segwit-bech32-wallet';
-import { SegwitP2SHWallet } from './wallets/segwit-p2sh-wallet';
-import { SLIP39LegacyP2PKHWallet, SLIP39SegwitBech32Wallet, SLIP39SegwitP2SHWallet } from './wallets/slip39-wallets';
 import { ExtendedTransaction, Transaction, TWallet } from './wallets/types';
 import { WatchOnlyWallet } from './wallets/watch-only-wallet';
-import { getLNDHub } from '../helpers/lndHub';
-import { LightningArkWallet } from './wallets/lightning-ark-wallet.ts';
 import { hexToUint8Array, uint8ArrayToHex } from '../blue_modules/uint8array-extras';
-import { HDTaprootWallet } from './wallets/hd-taproot-wallet';
-import { TaprootWallet } from './wallets/taproot-wallet';
 import { errorMessage } from '../helpers/errorMessage';
 
 let usedBucketNum: boolean | number = false;
@@ -404,102 +390,10 @@ export class BlueApp {
       for (const key of wallets) {
         // deciding which type is wallet and instantiating correct object
         const tempObj = JSON.parse(key);
-        let unserializedWallet: TWallet;
-        switch (tempObj.type) {
-          case SegwitBech32Wallet.type:
-            unserializedWallet = SegwitBech32Wallet.fromJson(key);
-            break;
-          case SegwitP2SHWallet.type:
-            unserializedWallet = SegwitP2SHWallet.fromJson(key);
-            break;
-          case WatchOnlyWallet.type:
-            unserializedWallet = WatchOnlyWallet.fromJson(key);
-            unserializedWallet.init();
-            if (unserializedWallet.isHd() && !unserializedWallet.isXpubValid()) {
-              continue;
-            }
-            break;
-          case HDLegacyP2PKHWallet.type:
-            unserializedWallet = HDLegacyP2PKHWallet.fromJson(key);
-            break;
-          case HDSegwitP2SHWallet.type:
-            unserializedWallet = HDSegwitP2SHWallet.fromJson(key);
-            break;
-          case HDSegwitBech32Wallet.type:
-            unserializedWallet = HDSegwitBech32Wallet.fromJson(key);
-            break;
-          case HDTaprootWallet.type:
-            unserializedWallet = HDTaprootWallet.fromJson(key);
-            break;
-          case TaprootWallet.type:
-            unserializedWallet = TaprootWallet.fromJson(key);
-            break;
-          case HDLegacyBreadwalletWallet.type:
-            unserializedWallet = HDLegacyBreadwalletWallet.fromJson(key);
-            break;
-          case HDLegacyElectrumSeedP2PKHWallet.type:
-            unserializedWallet = HDLegacyElectrumSeedP2PKHWallet.fromJson(key);
-            break;
-          case HDSegwitElectrumSeedP2WPKHWallet.type:
-            unserializedWallet = HDSegwitElectrumSeedP2WPKHWallet.fromJson(key);
-            break;
-          case MultisigHDWallet.type:
-            unserializedWallet = MultisigHDWallet.fromJson(key);
-            break;
-          case HDAezeedWallet.type:
-            unserializedWallet = HDAezeedWallet.fromJson(key);
-            // migrate password to this.passphrase field
-            // remove this code somewhere in year 2022
-            if (unserializedWallet.secret.includes(':')) {
-              const [mnemonic, passphrase] = unserializedWallet.secret.split(':');
-              unserializedWallet.secret = mnemonic;
-              unserializedWallet.passphrase = passphrase;
-            }
-
-            break;
-          case SLIP39SegwitP2SHWallet.type:
-            unserializedWallet = SLIP39SegwitP2SHWallet.fromJson(key);
-            break;
-          case SLIP39LegacyP2PKHWallet.type:
-            unserializedWallet = SLIP39LegacyP2PKHWallet.fromJson(key);
-            break;
-          case SLIP39SegwitBech32Wallet.type:
-            unserializedWallet = SLIP39SegwitBech32Wallet.fromJson(key);
-            break;
-          case LightningArkWallet.type:
-            unserializedWallet = LightningArkWallet.fromJson(key);
-            break;
-          case LightningCustodianWallet.type: {
-            unserializedWallet = LightningCustodianWallet.fromJson(key);
-            let lndhub: string | undefined;
-            try {
-              lndhub = await getLNDHub();
-            } catch (error) {
-              console.warn(error);
-            }
-
-            if (unserializedWallet.baseURI) {
-              unserializedWallet.setBaseURI(unserializedWallet.baseURI); // not really necessary, just for the sake of readability
-              console.log('using saved uri for for ln wallet:', unserializedWallet.baseURI);
-            } else if (lndhub) {
-              console.log('using wallet-wide settings ', lndhub, 'for ln wallet');
-              unserializedWallet.setBaseURI(lndhub);
-            } else {
-              console.log('wallet does not have a baseURI. Continuing init...');
-            }
-            unserializedWallet.init();
-            break;
-          }
-          case 'lightningLdk':
-            // since ldk wallets are deprecated and removed, we need to handle a case when such wallet still exists in storage
-            unserializedWallet = new HDSegwitBech32Wallet();
-            unserializedWallet.setSecret(tempObj.secret.replace('ldk://', ''));
-            break;
-          case LegacyWallet.type:
-          default:
-            unserializedWallet = LegacyWallet.fromJson(key);
-            break;
-        }
+        // a wallet type we do not know is loaded as the simplest one
+        const walletType = getWalletType(tempObj.type) ?? getWalletType(LegacyWallet.type)!;
+        const unserializedWallet = await walletType.load(key, tempObj);
+        if (!unserializedWallet) continue;
 
         try {
           if (realm) this.inflateWalletFromRealm(realm, unserializedWallet);

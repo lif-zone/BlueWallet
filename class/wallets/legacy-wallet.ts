@@ -13,6 +13,7 @@ import { randomBytes } from '../rng';
 import { AbstractWallet } from './abstract-wallet';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types';
 import { errorMessage } from '../../helpers/errorMessage';
+import { registerWalletType } from '../wallet-registry';
 const ECPair: ECPairAPI = ECPairFactory(ecc);
 bitcoin.initEccLib(ecc);
 
@@ -778,3 +779,5 @@ export class LegacyWallet extends AbstractWallet {
     return txs.length > 0;
   }
 }
+
+registerWalletType({ type: LegacyWallet.type, load: json => LegacyWallet.fromJson(json) });

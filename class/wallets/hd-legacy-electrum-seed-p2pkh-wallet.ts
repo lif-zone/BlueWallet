@@ -4,6 +4,7 @@ import * as mn from 'electrum-mnemonic';
 
 import ecc from '../../blue_modules/noble_ecc';
 import { HDLegacyP2PKHWallet } from './hd-legacy-p2pkh-wallet';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 const PREFIX = mn.PREFIXES.standard;
@@ -117,3 +118,5 @@ export class HDLegacyElectrumSeedP2PKHWallet extends HDLegacyP2PKHWallet {
     throw new Error('Internal error: this._node0 or this._node1 is undefined');
   }
 }
+
+registerWalletType({ type: HDLegacyElectrumSeedP2PKHWallet.type, load: json => HDLegacyElectrumSeedP2PKHWallet.fromJson(json) });

@@ -4,6 +4,7 @@ import ecc from '../../blue_modules/noble_ecc';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Psbt } from 'bitcoinjs-lib';
 import { CoinSelectReturnInput } from 'coinselect';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -163,3 +164,5 @@ export class HDTaprootWallet extends AbstractHDElectrumWallet {
     return true;
   }
 }
+
+registerWalletType({ type: HDTaprootWallet.type, load: json => HDTaprootWallet.fromJson(json) });

@@ -32,6 +32,7 @@ import { deleteArkadeRealm, getArkadeRealm } from '../../blue_modules/arkade-ada
 import { registerArkPaymentPush } from '../../blue_modules/notifications';
 import { errorMessage } from '../../helpers/errorMessage';
 import { bech32m } from 'bech32';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -979,3 +980,5 @@ export class LightningArkWallet extends LightningCustodianWallet {
     }
   }
 }
+
+registerWalletType({ type: LightningArkWallet.type, load: json => LightningArkWallet.fromJson(json) });

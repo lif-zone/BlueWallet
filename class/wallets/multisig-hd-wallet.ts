@@ -19,6 +19,7 @@ import {
   uint8ArrayToString,
   compareUint8Arrays,
 } from '../../blue_modules/uint8array-extras';
+import { registerWalletType } from '../wallet-registry';
 
 const ECPair = ECPairFactory(ecc);
 const bip32 = BIP32Factory(ecc);
@@ -1468,3 +1469,5 @@ export class MultisigHDWallet extends AbstractHDElectrumWallet {
     return this.isNativeSegwit() || this.isWrappedSegwit();
   }
 }
+
+registerWalletType({ type: MultisigHDWallet.type, load: json => MultisigHDWallet.fromJson(json) });

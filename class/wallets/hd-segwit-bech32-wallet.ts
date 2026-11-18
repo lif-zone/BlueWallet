@@ -1,4 +1,5 @@
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet';
+import { registerWalletType } from '../wallet-registry';
 
 /**
  * HD Wallet (BIP39).
@@ -54,3 +55,15 @@ export class HDSegwitBech32Wallet extends AbstractHDElectrumWallet {
     return true;
   }
 }
+
+registerWalletType({ type: HDSegwitBech32Wallet.type, load: json => HDSegwitBech32Wallet.fromJson(json) });
+
+// since ldk wallets are deprecated and removed, we need to handle a case when such wallet still exists in storage
+registerWalletType({
+  type: 'lightningLdk',
+  load: (json, saved) => {
+    const wallet = new HDSegwitBech32Wallet();
+    wallet.setSecret(saved.secret.replace('ldk://', ''));
+    return wallet;
+  },
+});

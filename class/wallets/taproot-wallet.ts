@@ -8,6 +8,7 @@ import { CreateTransactionResult, CreateTransactionUtxo } from './types.ts';
 import { CoinSelectTarget } from 'coinselect';
 import { hexToUint8Array } from '../../blue_modules/uint8array-extras';
 import { errorMessage } from '../../helpers/errorMessage';
+import { registerWalletType } from '../wallet-registry';
 const ECPair = ECPairFactory(ecc);
 
 export class TaprootWallet extends SegwitBech32Wallet {
@@ -142,3 +143,5 @@ export class TaprootWallet extends SegwitBech32Wallet {
     return { tx, inputs, outputs, fee, psbt };
   }
 }
+
+registerWalletType({ type: TaprootWallet.type, load: json => TaprootWallet.fromJson(json) });

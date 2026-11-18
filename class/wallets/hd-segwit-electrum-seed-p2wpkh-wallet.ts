@@ -4,6 +4,7 @@ import * as mn from 'electrum-mnemonic';
 
 import ecc from '../../blue_modules/noble_ecc';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet';
+import { registerWalletType } from '../wallet-registry';
 
 const bip32 = BIP32Factory(ecc);
 const PREFIX = mn.PREFIXES.segwit;
@@ -127,3 +128,5 @@ export class HDSegwitElectrumSeedP2WPKHWallet extends HDSegwitBech32Wallet {
     return true;
   }
 }
+
+registerWalletType({ type: HDSegwitElectrumSeedP2WPKHWallet.type, load: json => HDSegwitElectrumSeedP2WPKHWallet.fromJson(json) });
