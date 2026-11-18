@@ -254,6 +254,62 @@ export async function multiGetTransactionByTxid(txids: string[],
   return ret;
 }
 
+// what a transaction pays to the miner: what went in, less what went out
+async function tx_fee(txid: string): Promise<number> {
+  let tx = bitcoin.Transaction.fromHex(await tx_hex(txid));
+  let fee = 0;
+  for (let inp of tx.ins){
+    let prev = bitcoin.Transaction.fromHex(await tx_hex(
+      hex_enc(new Uint8Array(inp.hash).reverse())));
+    fee += Number(prev.outs[inp.index].value);
+  }
+  for (let out of tx.outs)
+    fee -= Number(out.value);
+  return fee;
+}
+
+// The transactions of an address that are not in a block yet, with their
+// fee. The LIF node has no call for it: they are taken from the history.
+export async function getMempoolTransactionsByAddress(address: string){
+  let ret: {height: 0; tx_hash: string; fee: number}[] = [];
+  for (let h of await getTransactionsByAddress(address)){
+    if (h.height>0)
+      continue;
+    ret.push({height: 0, tx_hash: h.tx_hash, fee: await tx_fee(h.tx_hash)});
+  }
+  return ret;
+}
+
+// drop what is kept of these transactions: the next call asks the node
+export async function forgetCachedTransactions(txids: string[]){
+  for (let txid of txids){
+    delete tx_hex_cache[txid];
+    delete tx_height_cache[txid];
+  }
+}
+
+// the block of a transaction and the last block. null when the
+// transaction is not in a block
+export async function getConfirmedBlockHeight(txid: string){
+  await conn();
+  let height = await tx_height(txid);
+  if (!(height>0))
+    return null;
+  return {height, tip: Math.max(tip.height, height)};
+}
+
+// the time of each of the blocks, by height. A block that cannot be read
+// is left out
+export async function getBlockTimestamps(heights: number[]){
+  let ret: Record<number, number> = {};
+  await batch(heights, async height=>{
+    try {
+      ret[height] = await block_time(height);
+    } catch(e){}
+  });
+  return ret;
+}
+
 // returns the id of the transaction. throws when the node refuses it
 export async function broadcastV2(hex: string): Promise<string> {
   return await call('blockchain.transaction.broadcast', [hex]);
