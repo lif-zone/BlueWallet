@@ -1,8 +1,8 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import assert from 'assert';
 
-import * as BlueElectrum from '../blue_modules/BlueElectrum';
 import { HDSegwitBech32Wallet } from './wallets/hd-segwit-bech32-wallet';
+import { TWalletElectrum, walletElectrum } from './wallets/legacy-wallet';
 import { SegwitBech32Wallet } from './wallets/segwit-bech32-wallet';
 import { TaprootWallet } from './wallets/taproot-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo } from './wallets/types.ts';
@@ -10,6 +10,7 @@ import { CoinSelectOutput, CoinSelectReturnInput } from 'coinselect';
 import { isUint8Array, uint8ArrayToHex } from '../blue_modules/uint8array-extras';
 import type { ElectrumTransaction } from '../blue_modules/BlueElectrum';
 import ecc from '../blue_modules/noble_ecc';
+import { isHDSegwitBech32 } from '../util/isHDSegwitBech32';
 
 /**
  * Thrown when transaction data from Electrum server fails verification (wrong txid, invalid signature on our input etc).
@@ -27,14 +28,14 @@ export class TxVerificationError extends Error {
  * Decodes raw tx hex from Electrum server and checks that it hashes to the txid we asked for. Bad copy is dropped from
  * cache (it could be saved while connected to a malicious server), so next time we fetch a fresh one
  */
-async function decodeServerTx(txid: string, hex: unknown): Promise<bitcoin.Transaction> {
+async function decodeServerTx(txid: string, hex: unknown, electrum: TWalletElectrum): Promise<bitcoin.Transaction> {
   try {
     assert(typeof hex === 'string', 'not a raw tx');
     const tx = bitcoin.Transaction.fromHex(hex);
     assert(tx.getId() === txid, 'txid mismatch');
     return tx;
   } catch (_) {
-    await BlueElectrum.forgetCachedTransactions([txid]);
+    await electrum.forgetCachedTransactions([txid]);
     throw new TxVerificationError('Electrum server returned a bad transaction ' + txid);
   }
 }
@@ -85,7 +86,7 @@ export class HDSegwitBech32Transaction {
     }
 
     if (wallet) {
-      if (wallet.type === HDSegwitBech32Wallet.type) {
+      if (isHDSegwitBech32(wallet)) {
         this._wallet = wallet;
       } else {
         throw new Error('Only HD Bech32 wallets supported');
@@ -97,6 +98,13 @@ export class HDSegwitBech32Transaction {
   }
 
   /**
+   * The Electrum client of the network of the wallet
+   */
+  private get _electrum(): TWalletElectrum {
+    return walletElectrum(this._wallet);
+  }
+
+  /**
    * If only txid present - we fetch hex
    *
    * @returns {Promise<void>}
@@ -104,10 +112,10 @@ export class HDSegwitBech32Transaction {
    */
   async _fetchTxhexAndDecode() {
     assert(this._txid, 'this._txid must be a string');
-    const hexes = await BlueElectrum.multiGetTransactionByTxid([this._txid], false, 10);
+    const hexes = await this._electrum.multiGetTransactionByTxid([this._txid], false, 10);
     this._txhex = hexes[this._txid];
     if (!this._txhex) throw new Error("Transaction can't be found in mempool");
-    this._txDecoded = await decodeServerTx(this._txid, this._txhex);
+    this._txDecoded = await decodeServerTx(this._txid, this._txhex, this._electrum);
   }
 
   /**
@@ -146,7 +154,7 @@ export class HDSegwitBech32Transaction {
    * @private
    */
   async _fetchRemoteTx(): Promise<ElectrumTransaction> {
-    const result = await BlueElectrum.multiGetTransactionByTxid([this._txid || this._txDecoded!.getId()], true);
+    const result = await this._electrum.multiGetTransactionByTxid([this._txid || this._txDecoded!.getId()], true);
     const remoteTx = Object.values(result)[0];
     if (!remoteTx) throw new Error('Transaction not found on Electrum');
     this._remoteTx = remoteTx;
@@ -223,10 +231,10 @@ export class HDSegwitBech32Transaction {
     }
 
     // raw hexes (not server-decoded jsons), so we can check them against txids
-    const prevHexes = await BlueElectrum.multiGetTransactionByTxid(prevInputs, false);
+    const prevHexes = await this._electrum.multiGetTransactionByTxid(prevInputs, false);
     const prevTransactions: Record<string, bitcoin.Transaction> = {};
     for (const prevTxid of prevInputs) {
-      prevTransactions[prevTxid] = await decodeServerTx(prevTxid, prevHexes[prevTxid]);
+      prevTransactions[prevTxid] = await decodeServerTx(prevTxid, prevHexes[prevTxid], this._electrum);
     }
 
     // fetched, now lets count how much satoshis went in
@@ -239,10 +247,10 @@ export class HDSegwitBech32Transaction {
       if (!prevOut) throw new TxVerificationError('Previous output of an input is missing');
       const value = Number(prevOut.value);
       wentIn += value;
-      const address = SegwitBech32Wallet.scriptPubKeyToAddress(uint8ArrayToHex(prevOut.script));
+      const address = SegwitBech32Wallet.scriptPubKeyToAddress(uint8ArrayToHex(prevOut.script), this._wallet.network);
       if (!address || !this._wallet.weOwnAddress(address)) continue; // not our input (e.g. incoming tx), nothing to check
       if (!isValidP2wpkhSpend(this._txDecoded, i, prevOut)) {
-        await BlueElectrum.forgetCachedTransactions([txid]);
+        await this._electrum.forgetCachedTransactions([txid]);
         throw new TxVerificationError('Invalid signature on our input, transaction was not created by this wallet');
       }
       utxos.push({ vout: inp.index, value, txid: reversedHash, address });
@@ -267,7 +275,7 @@ export class HDSegwitBech32Transaction {
     for (let n = 0; n < this._txDecoded.outs.length; n++) {
       const outp = this._txDecoded.outs[n];
       const value = Number(outp.value);
-      const address = TaprootWallet.scriptPubKeyToAddress(uint8ArrayToHex(outp.script));
+      const address = TaprootWallet.scriptPubKeyToAddress(uint8ArrayToHex(outp.script), this._wallet.network);
       if (address && this._wallet.weOwnAddress(address)) {
         changeAmount += value;
         unconfirmedUtxos.push({ vout: n, value, txid, address });
@@ -328,7 +336,12 @@ export class HDSegwitBech32Transaction {
       const outpScript = outp.script;
       if (
         !this._wallet.weOwnAddress(
-          String(SegwitBech32Wallet.scriptPubKeyToAddress(isUint8Array(outpScript) ? uint8ArrayToHex(outpScript) : outpScript)),
+          String(
+            SegwitBech32Wallet.scriptPubKeyToAddress(
+              isUint8Array(outpScript) ? uint8ArrayToHex(outpScript) : outpScript,
+              this._wallet.network,
+            ),
+          ),
         )
       )
         return true;

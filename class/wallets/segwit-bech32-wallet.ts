@@ -58,13 +58,13 @@ export class SegwitBech32Wallet extends LegacyWallet {
    * @param scriptPubKey
    * @returns {boolean|string} Either bech32 address or false
    */
-  static scriptPubKeyToAddress(scriptPubKey: string): string | false {
+  static scriptPubKeyToAddress(scriptPubKey: string, network: bitcoin.Network = bitcoin.networks.bitcoin): string | false {
     try {
       const scriptPubKey2 = hexToUint8Array(scriptPubKey);
       return (
         bitcoin.payments.p2wpkh({
           output: scriptPubKey2,
-          network: bitcoin.networks.bitcoin,
+          network,
         }).address ?? false
       );
     } catch (_) {

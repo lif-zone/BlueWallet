@@ -23,7 +23,8 @@ bitcoin.initEccLib(ecc);
  */
 /**
  * What a wallet needs from an Electrum client: the functions of BlueElectrum that the wallet classes call,
- * and the ones the screens call for a wallet (fees, and the connection check before a broadcast).
+ * and the ones the screens call for a wallet (fees, the connection check before a broadcast, and the state of
+ * an address or a transaction while a screen waits for it).
  */
 export type TWalletElectrum = Pick<
   typeof BlueElectrum,
@@ -38,7 +39,16 @@ export type TWalletElectrum = Pick<
   | 'estimateFees'
   | 'ensureConnected'
   | 'isDisabled'
+  | 'getMempoolTransactionsByAddress'
+  | 'forgetCachedTransactions'
+  | 'getConfirmedBlockHeight'
+  | 'getBlockTimestamps'
 >;
+
+/**
+ * The Electrum client to ask about a wallet: the one of its network. Bitcoin's when there is no wallet
+ */
+export const walletElectrum = (wallet?: { electrum?: TWalletElectrum } | null): TWalletElectrum => wallet?.electrum ?? BlueElectrum;
 
 export class LegacyWallet extends AbstractWallet {
   static readonly type = 'legacy';

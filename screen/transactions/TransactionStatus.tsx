@@ -20,7 +20,6 @@ import Icon from '../../components/Icon';
 import dayjs from 'dayjs';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import type { ElectrumTransaction } from '../../blue_modules/BlueElectrum';
 import { satoshiToLocalCurrency } from '../../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
@@ -29,6 +28,7 @@ import AddressLabelBadge from '../../components/AddressLabelBadge';
 import BlueText from '../../components/BlueText';
 import { HDSegwitBech32Transaction } from '../../class/hd-segwit-bech32-transaction';
 import { HDSegwitBech32Wallet } from '../../class/wallets/hd-segwit-bech32-wallet';
+import { TWalletElectrum, walletElectrum } from '../../class/wallets/legacy-wallet';
 import { Transaction, TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
 import { BlueLoading } from '../../components/BlueLoading';
@@ -54,12 +54,12 @@ import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electr
 dayjs.extend(relativeTime);
 
 /** Mutates Electrum `vin` entries with `value` and `addresses` from previous outputs so fee = sum(inputs) − sum(outputs) works. */
-async function populateVinValuesFromPrevTxs(fetchedTx: ElectrumTransaction): Promise<void> {
+async function populateVinValuesFromPrevTxs(fetchedTx: ElectrumTransaction, electrum: TWalletElectrum): Promise<void> {
   if (!fetchedTx?.vin?.length) return;
   const vinTxids = fetchedTx.vin.map(vin => vin.txid).filter(tid => !!tid);
   if (vinTxids.length === 0) return;
   try {
-    const prevTransactions = await BlueElectrum.multiGetTransactionByTxid(vinTxids, true, 10);
+    const prevTransactions = await electrum.multiGetTransactionByTxid(vinTxids, true, 10);
     for (let i = 0; i < fetchedTx.vin.length; i++) {
       const vin = fetchedTx.vin[i];
       const prevOut = prevTransactions[vin.txid]?.vout?.[vin.vout];
@@ -197,6 +197,8 @@ const TransactionStatus: React.FC = () => {
   const { wallets, txMetadata, counterpartyMetadata, addressMetadata, fetchAndSaveWalletTransactions, saveToDisk } = useStorage();
   const subscribedWallet = useWalletSubscribe(walletID);
   const recentOwningWallet = wallet ?? subscribedWallet ?? wallets.find(candidate => candidate.getID() === walletID);
+  // the Electrum client of the network of the transaction
+  const electrum = walletElectrum(recentOwningWallet);
   const hideBalanceInRecentMenu = recentOwningWallet?.hideBalance;
   const hideFromRecentMenu = recentOwningWallet?.getHideTransactionsInWalletsList?.() ?? false;
   const recentBalanceUnit = recentOwningWallet ? (recentOwningWallet.preferredBalanceUnit ?? BitcoinUnit.BTC) : undefined;
@@ -430,11 +432,11 @@ const TransactionStatus: React.FC = () => {
 
         // Also fetch from Electrum to get complete transaction data including fee
         // For received transactions, we need to populate vin.value by fetching previous transactions
-        BlueElectrum.multiGetTransactionByTxid([hash], true, 10)
+        electrum.multiGetTransactionByTxid([hash], true, 10)
           .then(async txMap => {
             const fetchedTx = txMap[hash];
             if (fetchedTx && fetchedTx.vin) {
-              await populateVinValuesFromPrevTxs(fetchedTx);
+              await populateVinValuesFromPrevTxs(fetchedTx, electrum);
               setTxFromElectrum(fetchedTx);
             }
           })
@@ -443,7 +445,7 @@ const TransactionStatus: React.FC = () => {
           });
       }
     }
-  }, [hash, subscribedWallet]);
+  }, [hash, subscribedWallet, electrum]);
 
   useEffect(() => {
     dispatch({ type: ActionType.SetWallet, payload: subscribedWallet });
@@ -453,7 +455,7 @@ const TransactionStatus: React.FC = () => {
   useEffect(() => {
     if (isAdvancedExpanded && tx?.hash && !txHex && !isLoadingHex) {
       setIsLoadingHex(true);
-      BlueElectrum.multiGetTransactionByTxid([tx.hash], false, 10)
+      electrum.multiGetTransactionByTxid([tx.hash], false, 10)
         .then(hexes => {
           const hex = hexes[tx.hash];
           if (hex && typeof hex === 'string') {
@@ -466,7 +468,7 @@ const TransactionStatus: React.FC = () => {
           setIsLoadingHex(false);
         });
     }
-  }, [isAdvancedExpanded, tx?.hash, txHex, isLoadingHex]);
+  }, [isAdvancedExpanded, tx?.hash, txHex, isLoadingHex, electrum]);
 
   // re-fetching tx status periodically
   useEffect(() => {
@@ -489,7 +491,7 @@ const TransactionStatus: React.FC = () => {
         setIntervalMs(31000);
 
         console.debug('checking tx', hash, 'for confirmations...');
-        const fetchedTxMap = await BlueElectrum.multiGetTransactionByTxid([hash], true, 10);
+        const fetchedTxMap = await electrum.multiGetTransactionByTxid([hash], true, 10);
         const fetchedTx = fetchedTxMap[hash];
         if (!fetchedTx) {
           console.error(`Transaction from Electrum with hash ${hash} not found.`);
@@ -500,7 +502,7 @@ const TransactionStatus: React.FC = () => {
 
         // Same as initial load: populate vin.value before committing state, otherwise calculatedFee
         // briefly (or permanently if mempool lookup fails) loses inputs−outputs fee vs the first fetch.
-        await populateVinValuesFromPrevTxs(fetchedTx);
+        await populateVinValuesFromPrevTxs(fetchedTx, electrum);
         setTxFromElectrum(fetchedTx);
 
         const address = fetchedTx.vout?.[0]?.scriptPubKey?.addresses?.pop();
@@ -510,7 +512,7 @@ const TransactionStatus: React.FC = () => {
         }
 
         if (!fetchedTx.confirmations && fetchedTx.vsize) {
-          const txsM = await BlueElectrum.getMempoolTransactionsByAddress(address);
+          const txsM = await electrum.getMempoolTransactionsByAddress(address);
           let txFromMempool;
           for (const tempTxM of txsM) {
             if (tempTxM?.tx_hash === hash) {
@@ -531,7 +533,7 @@ const TransactionStatus: React.FC = () => {
           }
 
           const satPerVbyte = txFromMempool.fee && fetchedTx.vsize ? txFromMempool.fee / fetchedTx.vsize : 0;
-          const fees = await BlueElectrum.estimateFees();
+          const fees = await electrum.estimateFees();
 
           // Only set ETA if we have valid fee data
           // Validate that fees exist, are numbers, and are positive
@@ -582,7 +584,7 @@ const TransactionStatus: React.FC = () => {
             const vinTxids = fetchedTx.vin.map(vin => vin.txid).filter(tid => !!tid);
             if (vinTxids.length > 0) {
               try {
-                const prevTxs = await BlueElectrum.multiGetTransactionByTxid(vinTxids, true, 10);
+                const prevTxs = await electrum.multiGetTransactionByTxid(vinTxids, true, 10);
                 // Populate vin.value from previous transaction outputs
                 for (let i = 0; i < fetchedTx.vin.length; i++) {
                   const vin = fetchedTx.vin[i];
@@ -648,7 +650,7 @@ const TransactionStatus: React.FC = () => {
         fetchTxInterval.current = undefined;
       }
     };
-  }, [hash, intervalMs, tx, fetchAndSaveWalletTransactions, wallet, subscribedWallet]);
+  }, [hash, intervalMs, tx, fetchAndSaveWalletTransactions, wallet, subscribedWallet, electrum]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -688,7 +690,7 @@ const TransactionStatus: React.FC = () => {
     if (!tx && hash) {
       const fetchTransaction = async () => {
         try {
-          const transactions = await BlueElectrum.multiGetTransactionByTxid([hash], true, 10);
+          const transactions = await electrum.multiGetTransactionByTxid([hash], true, 10);
           const fetchedTx = transactions[hash];
           if (fetchedTx) {
             const asTransaction = () => ({
@@ -703,7 +705,7 @@ const TransactionStatus: React.FC = () => {
             setIsLoading(false);
             dispatch({ type: ActionType.SetLoadingError, payload: false });
             // same normalization BlueElectrum applies to wallet transactions: input values and addresses from prev outputs
-            await populateVinValuesFromPrevTxs(fetchedTx);
+            await populateVinValuesFromPrevTxs(fetchedTx, electrum);
             setFrom((fetchedTx.vin ?? []).flatMap(vin => vin.addresses ?? []));
             setTo((fetchedTx.vout ?? []).flatMap(vout => vout.scriptPubKey?.addresses ?? []));
             setTX(asTransaction());
@@ -731,7 +733,7 @@ const TransactionStatus: React.FC = () => {
       };
       fetchTransaction().catch(error => console.error('Unhandled error in fetchTransaction:', error));
     }
-  }, [tx, hash, subscribedWallet, fetchAndSaveWalletTransactions]);
+  }, [tx, hash, subscribedWallet, fetchAndSaveWalletTransactions, electrum]);
 
   useEffect(() => {
     if (isLoading && !tx) {
@@ -1269,6 +1271,7 @@ const TransactionStatus: React.FC = () => {
         {showBlocksAccordion && tx?.hash && (
           <BlocksAccordion
             txHash={tx.hash}
+            electrum={electrum}
             isSent={txValue !== null && txValue < 0}
             isExpanded={isBlocksExpanded}
             vsize={tx.vsize}

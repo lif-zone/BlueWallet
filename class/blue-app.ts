@@ -12,7 +12,7 @@ import loc from '../loc';
 import { randomBytes } from './rng';
 import { getWalletType } from './wallet-registry';
 import './wallet-types';
-import { LegacyWallet } from './wallets/legacy-wallet';
+import { LegacyWallet, TWalletElectrum } from './wallets/legacy-wallet';
 import { ExtendedTransaction, Transaction, TWallet } from './wallets/types';
 import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import { hexToUint8Array, uint8ArrayToHex } from '../blue_modules/uint8array-extras';
@@ -624,12 +624,32 @@ export class BlueApp {
   }
 
   /**
+   * The Electrum clients of the wallets: one for each network that has a wallet.
+   * If index is present then the one of this specific wallet.
+   */
+  getElectrums = (index?: number): TWalletElectrum[] => {
+    const wallets = index || index === 0 ? this.wallets.slice(index, index + 1) : this.wallets;
+    return [...new Set(wallets.map(wallet => wallet.electrum))];
+  };
+
+  /**
+   * The wallets to fetch for: all of them, or the ones of the given Electrum clients (the connected ones)
+   */
+  private _walletsOf = (electrums?: TWalletElectrum[]): TWallet[] => {
+    return electrums ? this.wallets.filter(wallet => electrums.includes(wallet.electrum)) : this.wallets;
+  };
+
+  /**
    * For each wallet, fetches balance from remote endpoint.
    * Use getter for a specific wallet to get actual balance.
    * Returns void.
    * If index is present then fetch only from this specific wallet
+   *
+   * @param index {Integer} Index of the wallet in this.wallets array,
+   *                        blank to fetch from all wallets
+   * @param electrums fetch only for the wallets of these Electrum clients. Blank for all wallets
    */
-  fetchWalletBalances = async (index?: number): Promise<void> => {
+  fetchWalletBalances = async (index?: number, electrums?: TWalletElectrum[]): Promise<void> => {
     console.log('fetchWalletBalances for wallet#', typeof index === 'undefined' ? '(all)' : index);
     if (index || index === 0) {
       let c = 0;
@@ -640,7 +660,7 @@ export class BlueApp {
       }
     } else {
       await Promise.all(
-        this.wallets.map(async wallet => {
+        this._walletsOf(electrums).map(async wallet => {
           console.log('fetching balance for', wallet.getLabel());
           await wallet.fetchBalance();
         }),
@@ -656,9 +676,10 @@ export class BlueApp {
    *
    * @param index {Integer} Index of the wallet in this.wallets array,
    *                        blank to fetch from all wallets
+   * @param electrums fetch only for the wallets of these Electrum clients. Blank for all wallets
    * @return {Promise.<void>}
    */
-  fetchWalletTransactions = async (index?: number) => {
+  fetchWalletTransactions = async (index?: number, electrums?: TWalletElectrum[]) => {
     console.log('fetchWalletTransactions for wallet#', typeof index === 'undefined' ? '(all)' : index);
     if (index || index === 0) {
       let c = 0;
@@ -674,7 +695,7 @@ export class BlueApp {
       }
     } else {
       await Promise.all(
-        this.wallets.map(async wallet => {
+        this._walletsOf(electrums).map(async wallet => {
           await wallet.fetchTransactions();
           if ('fetchPendingTransactions' in wallet) {
             await wallet.fetchPendingTransactions();
@@ -685,7 +706,7 @@ export class BlueApp {
     }
   };
 
-  fetchSenderPaymentCodes = async (index?: number) => {
+  fetchSenderPaymentCodes = async (index?: number, electrums?: TWalletElectrum[]) => {
     console.log('fetchSenderPaymentCodes for wallet#', typeof index === 'undefined' ? '(all)' : index);
     if (index || index === 0) {
       const wallet = this.wallets[index];
@@ -697,7 +718,7 @@ export class BlueApp {
       }
     } else {
       await Promise.all(
-        this.wallets.map(async wallet => {
+        this._walletsOf(electrums).map(async wallet => {
           try {
             if (!(wallet.allowBIP47() && wallet.isBIP47Enabled() && 'fetchBIP47SenderPaymentCodes' in wallet)) return;
             await wallet.fetchBIP47SenderPaymentCodes();

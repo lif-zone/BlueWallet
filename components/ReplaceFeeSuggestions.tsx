@@ -5,14 +5,17 @@ import BlueText from './BlueText';
 import loc, { formatStringAddTwoWhiteSpaces } from '../loc';
 import NetworkTransactionFees, { NetworkTransactionFee, NetworkTransactionFeeType } from '../models/networkTransactionFees';
 import { useTheme } from './themes';
+import { TWallet } from '../class/wallets/types';
 import { DismissKeyboardInputAccessory, DismissKeyboardInputAccessoryViewID } from './DismissKeyboardInputAccessory';
 
 interface ReplaceFeeSuggestionsProps {
   onFeeSelected: (fee: number) => void;
   transactionMinimum?: number;
+  /** The wallet of the transaction: the fees are the ones of its network. Default: Bitcoin */
+  wallet?: TWallet;
 }
 
-const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSelected, transactionMinimum = 1 }) => {
+const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSelected, transactionMinimum = 1, wallet }) => {
   const [networkFees, setNetworkFees] = useState<NetworkTransactionFee | null>(null);
   const [selectedFeeType, setSelectedFeeType] = useState<NetworkTransactionFeeType>(NetworkTransactionFeeType.FAST);
   const [customFeeValue, setCustomFeeValue] = useState<string>('1');
@@ -46,7 +49,8 @@ const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSele
 
   const fetchNetworkFees = useCallback(async () => {
     try {
-      const cachedNetworkTransactionFees = JSON.parse((await AsyncStorage.getItem(NetworkTransactionFee.StorageKey)) || '{}');
+      const storageKey = wallet ? NetworkTransactionFee.storageKeyFor(wallet.network) : NetworkTransactionFee.StorageKey;
+      const cachedNetworkTransactionFees = JSON.parse((await AsyncStorage.getItem(storageKey)) || '{}');
 
       if (cachedNetworkTransactionFees && 'fastestFee' in cachedNetworkTransactionFees) {
         setNetworkFees(cachedNetworkTransactionFees);
@@ -54,7 +58,7 @@ const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSele
         setSelectedFeeType(NetworkTransactionFeeType.FAST);
       }
     } catch (_) {}
-    const fees = await NetworkTransactionFees.recommendedFees();
+    const fees = await NetworkTransactionFees.recommendedFees(wallet?.electrum);
     setNetworkFees(fees);
     onFeeSelected(adjustFee(fees.fastestFee, transactionMinimum));
     setSelectedFeeType(NetworkTransactionFeeType.FAST);

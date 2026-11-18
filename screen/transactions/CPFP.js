@@ -2,12 +2,11 @@ import React, { Component, useRef } from 'react';
 import { ActivityIndicator, Linking, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import PropTypes from 'prop-types';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import BlueCard from '../../components/BlueCard';
 import BlueText from '../../components/BlueText';
 import { HDSegwitBech32Transaction, TxVerificationError } from '../../class/hd-segwit-bech32-transaction';
-import { HDSegwitBech32Wallet } from '../../class/wallets/hd-segwit-bech32-wallet';
+import { isHDSegwitBech32 } from '../../util/isHDSegwitBech32';
 import presentAlert, { AlertType } from '../../components/Alert';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
@@ -113,7 +112,7 @@ export default class CPFP extends Component {
   broadcast = () => {
     this.setState({ isLoading: true }, async () => {
       try {
-        if (!(await BlueElectrum.ensureConnected())) {
+        if (!(await this.state.wallet.electrum.ensureConnected())) {
           throw new Error(loc.errors.network);
         }
         const result = await this.state.wallet.broadcastTx(this.state.txhex);
@@ -159,7 +158,7 @@ export default class CPFP extends Component {
   }
 
   async checkPossibilityOfCPFP() {
-    if (this.state.wallet.type !== HDSegwitBech32Wallet.type) {
+    if (!isHDSegwitBech32(this.state.wallet)) {
       return this.setState({ nonReplaceable: true, isLoading: false });
     }
     const tx = new HDSegwitBech32Transaction(null, this.state.txid, this.state.wallet);
@@ -195,7 +194,11 @@ export default class CPFP extends Component {
         <BlueCard>
           <BlueText>{text}</BlueText>
           <BlueSpacing20 />
-          <ReplaceFeeSuggestions onFeeSelected={fee => this.setState({ newFeeRate: fee })} transactionMinimum={this.state.feeRate} />
+          <ReplaceFeeSuggestions
+            onFeeSelected={fee => this.setState({ newFeeRate: fee })}
+            transactionMinimum={this.state.feeRate}
+            wallet={this.state.wallet}
+          />
           <BlueSpacing />
           <Button
             disabled={this.state.newFeeRate <= this.state.feeRate || !Number.isFinite(this.state.newFeeRate)}
