@@ -15,12 +15,8 @@ were not exercised yet.
     perf improved.
     - add a button to enable it.
   - TLS for lif_fetch, lif_WebSocket, lif_rpc_websocket.
-  - implemented, not yet tested:
-    - Negative TLS security tests (validate fails/rejects when configured to)
 - needs still testing
   - Real camera QR scan (the test machine has no camera).
-  - Real broadcast of a transaction, including a silent-payment send
-    (tested only up to the Confirm screen).
   - Clipboard read-back (writes are verified, the read was not possible in
     the automated browser).
   - The 10 other screens that hide the back arrow (need a Lightning wallet
