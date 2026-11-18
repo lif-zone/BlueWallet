@@ -2,7 +2,6 @@ import { BIP32Interface } from 'bip32';
 import * as bip39 from 'bip39';
 
 import * as bip39custom from '../../blue_modules/bip39';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import { LegacyWallet } from './legacy-wallet';
 import { Transaction } from './types';
 import { errorMessage } from '../../helpers/errorMessage';
@@ -175,7 +174,7 @@ export class AbstractHDWallet extends LegacyWallet {
       cache[startIndex + c] = address; // updating cache just for any case
       let txs = [];
       try {
-        txs = await BlueElectrum.getTransactionsByAddress(address);
+        txs = await this.electrum.getTransactionsByAddress(address);
       } catch (Err) {
         console.warn('BlueElectrum.getTransactionsByAddress()', errorMessage(Err));
       }

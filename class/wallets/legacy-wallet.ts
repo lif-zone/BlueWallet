@@ -20,6 +20,21 @@ bitcoin.initEccLib(ecc);
  *  Has private key and single address like "1ABCD....."
  *  (legacy P2PKH compressed)
  */
+/**
+ * What a wallet needs from an Electrum client: the functions of BlueElectrum that the wallet classes call.
+ */
+export type TWalletElectrum = Pick<
+  typeof BlueElectrum,
+  | 'getBalanceByAddress'
+  | 'getTransactionsByAddress'
+  | 'multiGetBalanceByAddress'
+  | 'multiGetHistoryByAddress'
+  | 'multiGetTransactionByTxid'
+  | 'multiGetUtxoByAddress'
+  | 'broadcastV2'
+  | 'estimateCurrentBlockheight'
+>;
+
 export class LegacyWallet extends AbstractWallet {
   static readonly type = 'legacy';
   static readonly defaultTypeReadable = 'Legacy (P2PKH)';
@@ -34,6 +49,14 @@ export class LegacyWallet extends AbstractWallet {
     super();
 
     this.typeReadable = typeReadable ?? LegacyWallet.defaultTypeReadable;
+  }
+
+  /**
+   * The Electrum client of the network this wallet lives on.
+   * A wallet of another network overrides it.
+   */
+  get electrum(): TWalletElectrum {
+    return BlueElectrum;
   }
 
   /**
@@ -111,7 +134,7 @@ export class LegacyWallet extends AbstractWallet {
     try {
       const address = this.getAddress();
       if (!address) throw new Error('LegacyWallet: Invalid address');
-      const balance = await BlueElectrum.getBalanceByAddress(address);
+      const balance = await this.electrum.getBalanceByAddress(address);
       this.balance = Number(balance.confirmed);
       this.unconfirmed_balance = Number(balance.unconfirmed);
       this._lastBalanceFetch = +new Date();
@@ -129,7 +152,7 @@ export class LegacyWallet extends AbstractWallet {
     try {
       const address = this.getAddress();
       if (!address) throw new Error('LegacyWallet: Invalid address');
-      const utxos = await BlueElectrum.multiGetUtxoByAddress([address]);
+      const utxos = await this.electrum.multiGetUtxoByAddress([address]);
       this._utxo = [];
       for (const arr of Object.values(utxos)) {
         this._utxo = this._utxo.concat(arr);
@@ -137,7 +160,7 @@ export class LegacyWallet extends AbstractWallet {
 
       // now we need to fetch txhash for each input as required by PSBT
       if (LegacyWallet.type !== this.type) return; // but only for LEGACY single-address wallets
-      const txhexes = await BlueElectrum.multiGetTransactionByTxid(
+      const txhexes = await this.electrum.multiGetTransactionByTxid(
         this._utxo.map(u => u.txid),
         false,
       );
@@ -170,7 +193,7 @@ export class LegacyWallet extends AbstractWallet {
   getUtxo(respectFrozen = false): Utxo[] {
     let ret: Utxo[] = [];
     for (const u of this._utxo) {
-      if (!u.confirmations && u.height) u.confirmations = BlueElectrum.estimateCurrentBlockheight() - u.height;
+      if (!u.confirmations && u.height) u.confirmations = this.electrum.estimateCurrentBlockheight() - u.height;
       ret.push(u);
     }
 
@@ -211,7 +234,7 @@ export class LegacyWallet extends AbstractWallet {
             value,
             confirmations: tx.confirmations,
             wif: false,
-            height: BlueElectrum.estimateCurrentBlockheight() - (tx.confirmations ?? 0),
+            height: this.electrum.estimateCurrentBlockheight() - (tx.confirmations ?? 0),
           });
         }
       }
@@ -253,7 +276,7 @@ export class LegacyWallet extends AbstractWallet {
     const addresses2fetch = address ? [address] : [];
 
     // first: batch fetch for all addresses histories
-    const histories = await BlueElectrum.multiGetHistoryByAddress(addresses2fetch);
+    const histories = await this.electrum.multiGetHistoryByAddress(addresses2fetch);
     const txs: Record<
       string,
       {
@@ -274,7 +297,7 @@ export class LegacyWallet extends AbstractWallet {
     // is safe because in that case our cache is filled
 
     // next, batch fetching each txid we got
-    const txdatas = await BlueElectrum.multiGetTransactionByTxid(Object.keys(txs), true);
+    const txdatas = await this.electrum.multiGetTransactionByTxid(Object.keys(txs), true);
     const transactions = Object.values(txdatas);
 
     // now, tricky part. we collect all transactions from inputs (vin), and batch fetch them too.
@@ -286,7 +309,7 @@ export class LegacyWallet extends AbstractWallet {
         // ^^^^ not all inputs have txid, some of them are Coinbase (newly-created coins)
       }
     }
-    const vintxdatas = await BlueElectrum.multiGetTransactionByTxid(vinTxids, true);
+    const vintxdatas = await this.electrum.multiGetTransactionByTxid(vinTxids, true);
 
     // fetched all transactions from our inputs. now we need to combine it.
     // iterating all _our_ transactions:
@@ -367,7 +390,7 @@ export class LegacyWallet extends AbstractWallet {
    * @returns {Promise<boolean>}
    */
   async broadcastTx(txhex: string): Promise<boolean> {
-    const broadcast = await BlueElectrum.broadcastV2(txhex);
+    const broadcast = await this.electrum.broadcastV2(txhex);
     console.log({ broadcast });
     if (broadcast.indexOf('successfully') !== -1) return true;
     return broadcast.length === 64; // this means return string is txid (precise length), so it was broadcasted ok
@@ -726,7 +749,7 @@ export class LegacyWallet extends AbstractWallet {
   async wasEverUsed(): Promise<boolean> {
     const address = this.getAddress();
     if (!address) return Promise.resolve(false);
-    const txs = await BlueElectrum.getTransactionsByAddress(address);
+    const txs = await this.electrum.getTransactionsByAddress(address);
     return txs.length > 0;
   }
 }

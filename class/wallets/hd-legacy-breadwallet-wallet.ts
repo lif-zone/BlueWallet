@@ -3,7 +3,6 @@ import * as bitcoinjs from 'bitcoinjs-lib';
 import { Psbt } from 'bitcoinjs-lib';
 import { CoinSelectReturnInput } from 'coinselect';
 
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import { ElectrumHistory } from '../../blue_modules/BlueElectrum';
 import ecc from '../../blue_modules/noble_ecc';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet';
@@ -127,7 +126,7 @@ export class HDLegacyBreadwalletWallet extends HDLegacyP2PKHWallet {
     let lastChunkWithUsedAddressesNum: number;
     let lastHistoriesWithUsedAddresses: Record<string, ElectrumHistory[]>;
     for (let c = 0; c < Math.round(endIndex / this.gap_limit); c++) {
-      const histories = await BlueElectrum.multiGetHistoryByAddress(gerenateChunkAddresses(c));
+      const histories = await this.electrum.multiGetHistoryByAddress(gerenateChunkAddresses(c));
       if (AbstractHDElectrumWallet._getTransactionsFromHistories(histories).length > 0) {
         // in this particular chunk we have used addresses
         lastChunkWithUsedAddressesNum = c;
