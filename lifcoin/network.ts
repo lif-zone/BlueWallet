@@ -15,8 +15,15 @@ export const lif_network: bitcoin.Network = {
   wif: 0x80,
 };
 
-// how LIF amounts are shown: 1 LIF is 100,000,000 sats
-export const lif_coin = {units: {BTC: 'LIF', sats: 'sats'}};
+// The value of one LIF in USD, until the network gives a price: a later
+// price update sets lif_coin.price.rate.
+export const LIF_USD_DEFAULT = 0.01;
+
+// how LIF amounts are shown: 1 LIF is 100,000,000 sats. And its price
+export const lif_coin = {
+  units: {BTC: 'LIF', sats: 'sats'},
+  price: {currency: 'USD', rate: LIF_USD_DEFAULT},
+};
 
 // BIP44 coin type: m/84'/1842'/0'
 export const LIF_COIN_TYPE = 1842;
