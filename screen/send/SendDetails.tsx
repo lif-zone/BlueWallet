@@ -61,6 +61,7 @@ import { isCancel, pickTransaction } from '../../blue_modules/fs';
 import { Measure } from '../../class/measure';
 import { isHDSegwitBech32 } from '../../util/isHDSegwitBech32';
 import { isWatchOnlySegwitBech32 } from '../../util/isWatchOnlySegwitBech32';
+import confirm from '../../helpers/confirm';
 import { errorMessage } from '../../helpers/errorMessage';
 
 interface IPaymentDestinations {
@@ -634,6 +635,15 @@ const SendDetails = () => {
           message: error,
         });
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
+        return;
+      }
+    }
+
+    // an address that is valid, but that the wallet wants the user to look at again
+    for (const transaction of addresses) {
+      const warning = wallet.addressWarning(transaction.address);
+      if (warning && !(await confirm(undefined, warning))) {
+        setIsLoading(false);
         return;
       }
     }

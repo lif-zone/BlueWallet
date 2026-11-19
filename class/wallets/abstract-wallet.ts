@@ -160,6 +160,14 @@ export class AbstractWallet {
     return true;
   }
 
+  /**
+   * A warning to show before the wallet sends to a valid address, which the user must confirm.
+   * Undefined when there is nothing to warn about. A wallet of another network overrides it.
+   */
+  addressWarning(address: string): string | undefined {
+    return undefined;
+  }
+
   allowSend(): boolean {
     return true;
   }
