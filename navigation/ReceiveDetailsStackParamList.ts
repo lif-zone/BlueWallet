@@ -23,6 +23,8 @@ export type ReceiveDetailsStackParamList = {
     currentAmount?: string;
     currentUnit?: import('../models/bitcoinUnits').BitcoinUnit;
     preferredUnit?: import('../models/bitcoinUnits').BitcoinUnit;
+    /** the wallet that receives: the amount is in the units of its coin */
+    walletID?: string;
   };
   ReceiveMoreOptions: {
     address: string;
@@ -30,6 +32,8 @@ export type ReceiveDetailsStackParamList = {
     currentAmount?: string;
     currentUnit?: import('../models/bitcoinUnits').BitcoinUnit;
     preferredUnit?: import('../models/bitcoinUnits').BitcoinUnit;
+    /** the wallet that receives: the amount is in the units of its coin */
+    walletID?: string;
   };
   ReceiveAddressLabel: {
     address: string;

@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import DefaultPreference from 'react-native-default-preference';
 import * as RNLocalize from 'react-native-localize';
 
+import type { TCoin } from '../models/bitcoinUnits';
 import { FiatUnit, TFiatUnit, getFiatRate } from '../models/fiatUnit';
 
 const PREFERRED_CURRENCY_STORAGE_KEY = 'preferredCurrency';
@@ -304,12 +305,32 @@ async function initCurrencyDaemon(clearLastUpdatedTime: boolean = false): Promis
   await updateExchangeRate();
 }
 
-function satoshiToLocalCurrency(satoshi: number, format: boolean = true): string {
-  const exchangeRateKey = BTC_PREFIX + preferredFiatCurrency.endPointKey;
-  const exchangeRate = exchangeRates[exchangeRateKey];
+/**
+ * The value of one coin in the currency of the user. Undefined when its not known.
+ * Bitcoin: the exchange rate. Another coin: its own price, when its in the currency of the user.
+ */
+function coinRate(coin?: TCoin): number | undefined {
+  if (coin) return coin.price?.currency === preferredFiatCurrency.endPointKey ? coin.price.rate : undefined;
+  const exchangeRate = exchangeRates[BTC_PREFIX + preferredFiatCurrency.endPointKey];
+  return typeof exchangeRate === 'number' ? exchangeRate : undefined;
+}
+
+/**
+ * True when amounts of the coin can be shown in the currency of the user. Bitcoin: always (the rate is fetched).
+ * Another coin: when it has a price in that currency. Otherwise its amounts are shown without a value in currency.
+ */
+function coinHasFiat(coin?: TCoin): boolean {
+  return !coin || coinRate(coin) !== undefined;
+}
+
+/**
+ * @param coin the coin of the amount (`wallet.coin`). Undefined: Bitcoin
+ */
+function satoshiToLocalCurrency(satoshi: number, format: boolean = true, coin?: TCoin): string {
+  const exchangeRate = coinRate(coin);
 
   if (typeof exchangeRate !== 'number') {
-    updateExchangeRate();
+    if (!coin) updateExchangeRate();
     return '...';
   }
 
@@ -333,9 +354,9 @@ function satoshiToLocalCurrency(satoshi: number, format: boolean = true): string
   }
 }
 
-function BTCToLocalCurrency(bitcoin: BigNumber.Value): string {
+function BTCToLocalCurrency(bitcoin: BigNumber.Value, coin?: TCoin): string {
   const sat = new BigNumber(bitcoin).multipliedBy(100000000).toNumber();
-  return satoshiToLocalCurrency(sat);
+  return satoshiToLocalCurrency(sat, true, coin);
 }
 
 async function mostRecentFetchedRate(): Promise<CurrencyRate> {
@@ -382,9 +403,11 @@ function btcToSatoshi(btc: BigNumber.Value): number {
   return new BigNumber(btc).multipliedBy(100000000).toNumber();
 }
 
-function fiatToBTC(fiatFloat: number): string {
-  const exchangeRateKey = BTC_PREFIX + preferredFiatCurrency.endPointKey;
-  const exchangeRate = exchangeRates[exchangeRateKey];
+/**
+ * @param coin the coin to convert to (`wallet.coin`). Undefined: Bitcoin
+ */
+function fiatToBTC(fiatFloat: number, coin?: TCoin): string {
+  const exchangeRate = coinRate(coin);
 
   if (typeof exchangeRate !== 'number') {
     throw new Error('Exchange rate not available');
@@ -420,6 +443,7 @@ export {
   _setSkipUpdateExchangeRate,
   BTCToLocalCurrency,
   btcToSatoshi,
+  coinHasFiat,
   EXCHANGE_RATES_STORAGE_KEY,
   fiatToBTC,
   getCurrencySymbol,

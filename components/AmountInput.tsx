@@ -17,6 +17,7 @@ import {
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import {
+  coinHasFiat,
   CurrencyRate,
   fiatToBTC,
   getCurrencySymbol,
@@ -28,7 +29,7 @@ import {
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../blue_modules/hapticFeedback';
 import confirm from '../helpers/confirm';
 import loc, { formatBalancePlain, formatBalanceWithoutSuffix, removeTrailingZeros, unitLabel } from '../loc';
-import { BitcoinUnit, TCoin, coinHasFiat } from '../models/bitcoinUnits';
+import { BitcoinUnit, TCoin } from '../models/bitcoinUnits';
 import Badge from './Badge';
 import BlueText from './BlueText';
 import Icon from './Icon';
@@ -36,8 +37,11 @@ import { useTheme } from './themes';
 
 export const conversionCache: { [key: string]: string } = {};
 
-export const getCachedSatoshis = (amount: string): string | undefined => {
-  return conversionCache[amount + BitcoinUnit.LOCAL_CURRENCY];
+// the key of an amount in currency: each coin has its own conversions
+const cacheKey = (amount: string, coin?: TCoin): string => amount + BitcoinUnit.LOCAL_CURRENCY + (coin ? ':' + coin.units.BTC : '');
+
+export const getCachedSatoshis = (amount: string, coin?: TCoin): string | undefined => {
+  return conversionCache[cacheKey(amount, coin)];
 };
 
 export const setCachedSatoshis = (amount: string, sats: string): void => {
@@ -159,18 +163,18 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
     switch (unit) {
       case BitcoinUnit.BTC: {
         const sat = new BigNumber(amount).multipliedBy(100000000).toNumber();
-        return formatBalanceWithoutSuffix(sat, BitcoinUnit.LOCAL_CURRENCY, false);
+        return formatBalanceWithoutSuffix(sat, BitcoinUnit.LOCAL_CURRENCY, false, coin);
       }
       case BitcoinUnit.SATS:
-        return formatBalanceWithoutSuffix(Number(amount), BitcoinUnit.LOCAL_CURRENCY, false);
+        return formatBalanceWithoutSuffix(Number(amount), BitcoinUnit.LOCAL_CURRENCY, false, coin);
       case BitcoinUnit.LOCAL_CURRENCY: {
         let res: string = '';
-        if (conversionCache[amount + BitcoinUnit.LOCAL_CURRENCY]) {
+        if (conversionCache[cacheKey(amount, coin)]) {
           // cache hit! we reuse old value that supposedly doesn't have rounding errors
-          const sats = conversionCache[amount + BitcoinUnit.LOCAL_CURRENCY];
+          const sats = conversionCache[cacheKey(amount, coin)];
           res = satoshiToBTC(Number(sats));
         } else {
-          res = fiatToBTC(Number(amount));
+          res = fiatToBTC(Number(amount), coin);
         }
         res = removeTrailingZeros(res);
         return `${res} ${unitLabel(BitcoinUnit.BTC, coin)}`;
@@ -208,7 +212,7 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
     if (previousUnit === BitcoinUnit.BTC) {
       newUnit = BitcoinUnit.SATS;
     } else if (previousUnit === BitcoinUnit.SATS) {
-      // a coin without a price has no currency unit
+      // a coin without a price in the currency of the user has no currency unit
       newUnit = coinHasFiat(coin) ? BitcoinUnit.LOCAL_CURRENCY : BitcoinUnit.BTC;
     } else if (previousUnit === BitcoinUnit.LOCAL_CURRENCY) {
       newUnit = BitcoinUnit.BTC;
@@ -230,19 +234,19 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
         sats = amount;
         break;
       case BitcoinUnit.LOCAL_CURRENCY:
-        sats = new BigNumber(fiatToBTC(+amount)).multipliedBy(100000000).toString();
+        sats = new BigNumber(fiatToBTC(+amount, coin)).multipliedBy(100000000).toString();
         break;
     }
-    if (previousUnit === BitcoinUnit.LOCAL_CURRENCY && conversionCache[amount + previousUnit]) {
+    if (previousUnit === BitcoinUnit.LOCAL_CURRENCY && conversionCache[cacheKey(amount, coin)]) {
       // cache hit! we reuse old value that supposedly doesnt have rounding errors
-      sats = conversionCache[amount + previousUnit];
+      sats = conversionCache[cacheKey(amount, coin)];
     }
 
-    const newInputValue = formatBalancePlain(+sats, newUnit, false);
+    const newInputValue = formatBalancePlain(+sats, newUnit, false, coin);
 
     if (newUnit === BitcoinUnit.LOCAL_CURRENCY && previousUnit === BitcoinUnit.SATS) {
       // we cache conversion, so when we will need reverse conversion there wont be a rounding error
-      conversionCache[newInputValue + newUnit] = amount;
+      conversionCache[cacheKey(newInputValue, coin)] = amount;
     }
     onChangeText(newInputValue);
     onAmountUnitChange(newUnit);

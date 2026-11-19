@@ -21,7 +21,7 @@ import dayjs from 'dayjs';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import type { ElectrumTransaction } from '../../blue_modules/BlueElectrum';
-import { satoshiToLocalCurrency } from '../../blue_modules/currency';
+import { coinHasFiat, satoshiToLocalCurrency } from '../../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
 import AddressLabelBadge from '../../components/AddressLabelBadge';
@@ -45,7 +45,7 @@ import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import useWalletSubscribe from '../../hooks/useWalletSubscribe';
 import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../../loc';
-import { BitcoinUnit, coinHasFiat } from '../../models/bitcoinUnits';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { isOnChainTransaction, resolveTxDisplayState } from '../../blue_modules/transactionDisplayState';
 import { isWatchOnlySegwitBech32 } from '../../util/isWatchOnlySegwitBech32';
@@ -1019,7 +1019,7 @@ const TransactionStatus: React.FC = () => {
   const isOnChainTx = isOnChainTransaction(tx);
   const isPending = resolveTxDisplayState(tx) === 'pending';
   const walletBalanceUnit = wallet?.preferredBalanceUnit ?? BitcoinUnit.BTC;
-  // a coin without a price has no currency unit
+  // a coin without a price in the currency of the user has no currency unit
   const preferredBalanceUnit = walletBalanceUnit === BitcoinUnit.LOCAL_CURRENCY && !coinHasFiat(coin) ? BitcoinUnit.BTC : walletBalanceUnit;
   const showBlocksAccordion = isOnChainTx && !isPending && parsedConfirmations > 0;
 
@@ -1160,7 +1160,7 @@ const TransactionStatus: React.FC = () => {
             adjustsFontSizeToFit
             minimumFontScale={0.55}
           >
-            {txValue !== null ? formatBalanceWithoutSuffix(txValue, preferredBalanceUnit, true) : '-'}
+            {txValue !== null ? formatBalanceWithoutSuffix(txValue, preferredBalanceUnit, true, coin) : '-'}
             {preferredBalanceUnit !== BitcoinUnit.LOCAL_CURRENCY && (
               <Text style={[styles.valueUnit, stylesHook.valueUnit]}>{` ${unitLabel(preferredBalanceUnit, coin)}`}</Text>
             )}
@@ -1169,7 +1169,7 @@ const TransactionStatus: React.FC = () => {
             <Text style={[styles.localCurrency, stylesHook.localCurrency, scaledStyles.localCurrency]}>
               {preferredBalanceUnit === BitcoinUnit.LOCAL_CURRENCY
                 ? `${formatBalanceWithoutSuffix(Math.abs(txValue), BitcoinUnit.BTC, true)} ${unitLabel(BitcoinUnit.BTC, coin)}`
-                : satoshiToLocalCurrency(Math.abs(txValue))}
+                : satoshiToLocalCurrency(Math.abs(txValue), true, coin)}
             </Text>
           )}
         </View>
@@ -1335,7 +1335,7 @@ const TransactionStatus: React.FC = () => {
               text={
                 calculatedFee !== null && calculatedFee !== undefined
                   ? `${formatBalanceWithoutSuffix(calculatedFee, BitcoinUnit.SATS, true)} ${unitLabel(BitcoinUnit.SATS, coin)}` +
-                    (coinHasFiat(coin) ? ` / ${satoshiToLocalCurrency(calculatedFee)}` : '')
+                    (coinHasFiat(coin) ? ` / ${satoshiToLocalCurrency(calculatedFee, true, coin)}` : '')
                   : '-'
               }
               style={StyleSheet.flatten([styles.detailValue, stylesHook.detailValue])}

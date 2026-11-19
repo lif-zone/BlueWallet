@@ -11,11 +11,11 @@ import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsSta
 const ReceiveMoreOptionsSheet = () => {
   const navigation = useNavigation<NativeStackNavigationProp<ReceiveDetailsStackParamList, 'ReceiveMoreOptions'>>();
   const route = useRoute<RouteProp<ReceiveDetailsStackParamList, 'ReceiveMoreOptions'>>();
-  const { address, currentLabel, currentAmount, currentUnit, preferredUnit } = route.params;
+  const { address, currentLabel, currentAmount, currentUnit, preferredUnit, walletID } = route.params;
 
   const navigateToCustomAmount = useCallback(() => {
-    navigation.replace('ReceiveCustomAmount', { address, currentLabel, currentAmount, currentUnit, preferredUnit });
-  }, [navigation, address, currentLabel, currentAmount, currentUnit, preferredUnit]);
+    navigation.replace('ReceiveCustomAmount', { address, currentLabel, currentAmount, currentUnit, preferredUnit, walletID });
+  }, [navigation, address, currentLabel, currentAmount, currentUnit, preferredUnit, walletID]);
 
   const navigateToAddressLabel = useCallback(() => {
     navigation.replace('ReceiveAddressLabel', { address });

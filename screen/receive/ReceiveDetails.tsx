@@ -7,7 +7,7 @@ import { BackHandler, Pressable, StyleSheet, Text, useColorScheme, View } from '
 import Animated, { Easing, Layout, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import Share from 'react-native-share';
 import { walletElectrum } from '../../class/wallets/legacy-wallet';
-import { fiatToBTC, satoshiToBTC } from '../../blue_modules/currency';
+import { coinHasFiat, fiatToBTC, satoshiToBTC } from '../../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { majorTomToGroundControl, tryToObtainPermissions } from '../../blue_modules/notifications';
 import AddressLabelBadge from '../../components/AddressLabelBadge';
@@ -27,7 +27,7 @@ import { HandOffActivityType } from '../../components/types';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import loc, { formatBalance, unitLabel } from '../../loc';
-import { BitcoinUnit, Chain, coinHasFiat } from '../../models/bitcoinUnits';
+import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsStackParamList';
 import { SuccessView } from '../send/success';
 import { BlueSpacing40 } from '../../components/BlueSpacing';
@@ -641,6 +641,7 @@ const ReceiveDetails = () => {
       currentAmount: customAmount,
       currentUnit: customUnit,
       preferredUnit: wallet?.getPreferredBalanceUnit() || BitcoinUnit.BTC,
+      walletID: wallet?.getID(),
     });
   }, [address, customAmount, customLabel, customUnit, navigate, wallet]);
 
@@ -702,7 +703,7 @@ const ReceiveDetails = () => {
         case BitcoinUnit.SATS:
           return satoshiToBTC(number) + ' ' + unitLabel(BitcoinUnit.BTC, wallet?.coin);
         case BitcoinUnit.LOCAL_CURRENCY:
-          return fiatToBTC(number) + ' ' + unitLabel(BitcoinUnit.BTC, wallet?.coin);
+          return fiatToBTC(number, wallet?.coin) + ' ' + unitLabel(BitcoinUnit.BTC, wallet?.coin);
       }
       return customAmount + ' ' + customUnit;
     } else {
