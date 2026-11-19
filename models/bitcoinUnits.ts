@@ -16,6 +16,12 @@ export type TCoin = {
   units: { [BitcoinUnit.BTC]: string; [BitcoinUnit.SATS]: string };
 };
 
+/**
+ * True when amounts of the coin have a value in the currency of the user. Only Bitcoin has one: its the only coin
+ * with a price source. The amounts of another coin are shown without a value in currency.
+ */
+export const coinHasFiat = (coin?: TCoin): boolean => !coin;
+
 export const Chain = {
   ONCHAIN: 'ONCHAIN',
   OFFCHAIN: 'OFFCHAIN',

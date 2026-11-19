@@ -33,7 +33,7 @@ import { SecondButton } from '../../components/SecondButton';
 import { useTheme } from '../../components/themes';
 import prompt from '../../helpers/prompt';
 import { unlockWithBiometrics, useBiometrics } from '../../hooks/useBiometrics';
-import loc, { formatBalanceWithoutSuffix } from '../../loc';
+import loc, { formatBalanceWithoutSuffix, unitLabel } from '../../loc';
 import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useNavigation, useFocusEffect, useRoute, RouteProp, usePreventRemove, useLocale } from '@react-navigation/native';
@@ -257,7 +257,12 @@ const WalletDetails: React.FC = () => {
         .join('\n');
     }
 
-    const headers = [loc.transactions.date, loc.transactions.txid, `${loc.send.create_amount} (${BitcoinUnit.BTC})`, loc.send.create_memo];
+    const headers = [
+      loc.transactions.date,
+      loc.transactions.txid,
+      `${loc.send.create_amount} (${unitLabel(BitcoinUnit.BTC, wallet.coin)})`,
+      loc.send.create_memo,
+    ];
     headers.push(loc.lnd.payment);
 
     const rows = [encodeCsvRow(headers)];

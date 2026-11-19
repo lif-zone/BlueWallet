@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Keyboard, ScrollVi
 import { useTheme } from '../components/themes';
 import type { Theme } from '../components/themes';
 import loc, { formatBalance } from '../loc';
+import { useStorage } from '../hooks/context/useStorage';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -207,7 +208,9 @@ const SelectFeeScreen = () => {
     },
   });
 
-  const formatFee = useCallback((fee: number) => formatBalance(fee, feeUnit, true), [feeUnit]);
+  const { wallets } = useStorage();
+  const coin = wallets.find(w => w.getID() === walletID)?.coin;
+  const formatFee = useCallback((fee: number) => formatBalance(fee, feeUnit, true, coin), [feeUnit, coin]);
 
   useEffect(() => {
     const options: FeeOption[] = [

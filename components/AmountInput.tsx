@@ -28,7 +28,7 @@ import {
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../blue_modules/hapticFeedback';
 import confirm from '../helpers/confirm';
 import loc, { formatBalancePlain, formatBalanceWithoutSuffix, removeTrailingZeros, unitLabel } from '../loc';
-import { BitcoinUnit, TCoin } from '../models/bitcoinUnits';
+import { BitcoinUnit, TCoin, coinHasFiat } from '../models/bitcoinUnits';
 import Badge from './Badge';
 import BlueText from './BlueText';
 import Icon from './Icon';
@@ -152,6 +152,7 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
   }, [amount, unit]);
 
   const secondaryDisplayCurrency = useMemo(() => {
+    if (!coinHasFiat(coin)) return '';
     if (amount === BitcoinUnit.MAX) {
       return '';
     }
@@ -207,7 +208,8 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
     if (previousUnit === BitcoinUnit.BTC) {
       newUnit = BitcoinUnit.SATS;
     } else if (previousUnit === BitcoinUnit.SATS) {
-      newUnit = BitcoinUnit.LOCAL_CURRENCY;
+      // a coin without a price has no currency unit
+      newUnit = coinHasFiat(coin) ? BitcoinUnit.LOCAL_CURRENCY : BitcoinUnit.BTC;
     } else if (previousUnit === BitcoinUnit.LOCAL_CURRENCY) {
       newUnit = BitcoinUnit.BTC;
     } else {
@@ -244,7 +246,7 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
     }
     onChangeText(newInputValue);
     onAmountUnitChange(newUnit);
-  }, [amount, onChangeText, onAmountUnitChange, unit]);
+  }, [amount, onChangeText, onAmountUnitChange, unit, coin]);
 
   const handleTextInputOnPress = useCallback(() => {
     textInputRef?.current?.focus();
