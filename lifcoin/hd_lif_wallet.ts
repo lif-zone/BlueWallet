@@ -57,6 +57,20 @@ export class HDLifWallet extends HDSegwitBech32Wallet {
     return xpub_version_set(lpub, XPUB_VERSION);
   }
 
+  // An address of the older kinds (1..., 3...) is written the same on
+  // Bitcoin and on LIF: one copied from a Bitcoin wallet would be paid by
+  // mistake. Its accepted, after the user confirms.
+  addressWarning(address: string): string|undefined {
+    if (address.trim().toLowerCase().startsWith(this.bech32Prefix))
+      return;
+    if (!this.isAddressValid(address))
+      return;
+    return 'This is not a lif1 address. Addresses of this kind are written '
+      +'the same on Bitcoin and on LIF. Send only if you know that it is a '
+      +'LIF address: if it is a Bitcoin address, the owner may not be able '
+      +'to reach these coins. Send to this address?';
+  }
+
   // Bitcoin only
   allowBIP47(){
     return false;
