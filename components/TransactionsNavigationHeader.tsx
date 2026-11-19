@@ -9,7 +9,8 @@ import { MultisigHDWallet } from '../class/wallets/multisig-hd-wallet';
 import WalletGradient from '../class/wallet-gradient';
 import { TWallet } from '../class/wallets/types';
 import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../loc';
-import { BitcoinUnit, coinHasFiat } from '../models/bitcoinUnits';
+import { BitcoinUnit } from '../models/bitcoinUnits';
+import { coinHasFiat } from '../blue_modules/currency';
 import { FiatUnit } from '../models/fiatUnit';
 import { BlurredBalanceView } from './BlurredBalanceView';
 import { useSettings } from '../hooks/context/useSettings';
@@ -89,7 +90,7 @@ const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> 
     if (newWalletPreferredUnit === BitcoinUnit.BTC) {
       newWalletPreferredUnit = BitcoinUnit.SATS;
     } else if (newWalletPreferredUnit === BitcoinUnit.SATS) {
-      // a coin without a price has no currency unit
+      // a coin without a price in the currency of the user has no currency unit
       newWalletPreferredUnit = coinHasFiat(wallet.coin) ? BitcoinUnit.LOCAL_CURRENCY : BitcoinUnit.BTC;
     } else {
       newWalletPreferredUnit = BitcoinUnit.BTC;
@@ -144,9 +145,9 @@ const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> 
   const currentBalance = wallet ? wallet.getBalance() : 0;
   const formattedBalance = useMemo(() => {
     return unit === BitcoinUnit.LOCAL_CURRENCY
-      ? formatBalance(currentBalance, unit, true)
+      ? formatBalance(currentBalance, unit, true, wallet?.coin)
       : formatBalanceWithoutSuffix(currentBalance, unit, true);
-  }, [unit, currentBalance]);
+  }, [unit, currentBalance, wallet]);
 
   const balance = !wallet.hideBalance && formattedBalance;
 

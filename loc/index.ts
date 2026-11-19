@@ -10,8 +10,8 @@ import Localization, { LocalizedStrings } from 'react-localization';
 import { I18nManager } from 'react-native';
 import * as RNLocalize from 'react-native-localize';
 
-import { satoshiToLocalCurrency } from '../blue_modules/currency';
-import { BitcoinUnit, TCoin, coinHasFiat } from '../models/bitcoinUnits';
+import { coinHasFiat, satoshiToLocalCurrency } from '../blue_modules/currency';
+import { BitcoinUnit, TCoin } from '../models/bitcoinUnits';
 import { AvailableLanguages, LangCode } from './languages';
 import { resolveLangCodeFromRnLocales, RnLocale } from './resolveDeviceLangCode';
 import enJson from './en.json' with {type: 'json'};
@@ -495,7 +495,7 @@ export function formatBalance(balance: number, toUnit: string, withFormatting = 
   if (toUnit === undefined) {
     return balance + ' ' + unitLabel(BitcoinUnit.BTC, coin);
   }
-  // a coin without a price is shown in its own unit
+  // a coin without a price in the currency of the user is shown in its own unit
   if (toUnit === BitcoinUnit.LOCAL_CURRENCY && !coinHasFiat(coin)) toUnit = BitcoinUnit.BTC;
   if (toUnit === BitcoinUnit.BTC) {
     const value = new BigNumber(balance).dividedBy(100000000).toFixed(8);
@@ -505,7 +505,7 @@ export function formatBalance(balance: number, toUnit: string, withFormatting = 
     return value + ' ' + unitLabel(BitcoinUnit.SATS, coin);
   } else {
     console.debug('[UnitSwitch/Fiat] formatBalance to fiat', { balance, unit: toUnit, withFormatting });
-    return satoshiToLocalCurrency(balance);
+    return satoshiToLocalCurrency(balance, true, coin);
   }
 }
 
@@ -514,9 +514,10 @@ export function formatBalance(balance: number, toUnit: string, withFormatting = 
  * @param balance {number} Satoshis
  * @param toUnit {string} Value from models/bitcoinUnits.js, for example `BitcoinUnit.SATS`
  * @param withFormatting {boolean} Works only with `BitcoinUnit.SATS`, makes spaces wetween groups of 000
+ * @param coin the coin of the balance (`wallet.coin`). Undefined: Bitcoin
  * @returns {string}
  */
-export function formatBalanceWithoutSuffix(balance = 0, toUnit: string, withFormatting = false): string | number {
+export function formatBalanceWithoutSuffix(balance = 0, toUnit: string, withFormatting = false, coin?: TCoin): string | number {
   if (toUnit === undefined) {
     return balance;
   }
@@ -527,7 +528,7 @@ export function formatBalanceWithoutSuffix(balance = 0, toUnit: string, withForm
     return withFormatting ? new Intl.NumberFormat().format(balance).toString() : String(balance);
   } else {
     console.debug('[UnitSwitch/Fiat] formatBalanceWithoutSuffix to fiat', { balance, unit: toUnit, withFormatting });
-    return satoshiToLocalCurrency(balance);
+    return satoshiToLocalCurrency(balance, true, coin);
   }
 }
 
@@ -539,9 +540,9 @@ export function formatBalanceWithoutSuffix(balance = 0, toUnit: string, withForm
  * @param withFormatting {boolean} Works only with `BitcoinUnit.SATS`, makes spaces wetween groups of 000
  * @returns {string}
  */
-export function formatBalancePlain(balance = 0, toUnit: string, withFormatting = false) {
+export function formatBalancePlain(balance = 0, toUnit: string, withFormatting = false, coin?: TCoin) {
   console.debug('[UnitSwitch/Fiat] formatBalancePlain', { balance, unit: toUnit, withFormatting });
-  const newInputValue = formatBalanceWithoutSuffix(balance, toUnit, withFormatting);
+  const newInputValue = formatBalanceWithoutSuffix(balance, toUnit, withFormatting, coin);
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
   return _leaveNumbersAndDots(newInputValue.toString());
 }

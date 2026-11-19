@@ -5,7 +5,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import BlueCard from '../../components/BlueCard';
 import { formatTransactionOutput } from '../../helpers/formatTransactionOutput';
 import BlueText from '../../components/BlueText';
-import { BitcoinUnit, coinHasFiat } from '../../models/bitcoinUnits';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
 import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../../loc';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import presentAlert from '../../components/Alert';
@@ -13,7 +13,7 @@ import { useTheme } from '../../components/themes';
 import Button from '../../components/Button';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import SafeArea from '../../components/SafeArea';
-import { satoshiToBTC, satoshiToLocalCurrency } from '../../blue_modules/currency';
+import { coinHasFiat, satoshiToBTC, satoshiToLocalCurrency } from '../../blue_modules/currency';
 import { unlockWithBiometrics, useBiometrics } from '../../hooks/useBiometrics';
 import { TWallet, CreateTransactionTarget } from '../../class/wallets/types';
 import PayjoinTransaction from '../../class/payjoin-transaction';
@@ -319,7 +319,7 @@ const Confirm: React.FC = () => {
           <Text style={[styles.valueUnit, stylesHook.valueValue]}>{' ' + unitLabel(BitcoinUnit.BTC, wallet.coin)}</Text>
         </View>
         <Text style={[styles.transactionAmountFiat, stylesHook.transactionAmountFiat]}>
-          {item.value != null && coinHasFiat(wallet.coin) ? satoshiToLocalCurrency(item.value) : null}
+          {item.value != null && coinHasFiat(wallet.coin) ? satoshiToLocalCurrency(item.value, true, wallet.coin) : null}
         </Text>
         <BlueCard>
           <Text style={[styles.transactionDetailsTitle, stylesHook.transactionDetailsTitle]}>{loc.send.create_to}</Text>
@@ -377,7 +377,7 @@ const Confirm: React.FC = () => {
         <BlueCard>
           <Text style={styles.cardText} testID="TransactionFee">
             {loc.send.create_fee}: {formatBalance(feeSatoshi, BitcoinUnit.BTC, false, wallet.coin)}
-            {coinHasFiat(wallet.coin) ? ` (${satoshiToLocalCurrency(feeSatoshi)})` : ''}
+            {coinHasFiat(wallet.coin) ? ` (${satoshiToLocalCurrency(feeSatoshi, true, wallet.coin)})` : ''}
           </Text>
           {state.isLoading ? (
             <ActivityIndicator />

@@ -14,7 +14,8 @@ import TransactionOnchainIcon from '../components/icons/TransactionOnchainIcon';
 import TransactionOutgoingIcon from '../components/icons/TransactionOutgoingIcon';
 import TransactionPendingIcon from '../components/icons/TransactionPendingIcon';
 import loc, { formatBalanceWithoutSuffix, formatTransactionListDate, transactionTimeToReadable, unitLabel } from '../loc';
-import { BitcoinUnit, coinHasFiat } from '../models/bitcoinUnits';
+import { BitcoinUnit } from '../models/bitcoinUnits';
+import { coinHasFiat } from '../blue_modules/currency';
 import { useSettings } from '../hooks/context/useSettings';
 import { useTheme } from './themes';
 import { Action } from './types';
@@ -223,12 +224,12 @@ const TransactionListItemComponent: React.FC<TransactionListItemProps> = ({
   }, [isPending, item.timestamp, language, arkRowKind]);
 
   // The amount of a coin other than Bitcoin is shown with its unit: a list may hold transactions of several coins.
-  // And never in currency, when the coin has no price.
+  // And not in currency, when the coin has no price in the currency of the user.
   const coin = useMemo(() => wallets.find(w => w.getID() === (item.walletID ?? walletID))?.coin, [wallets, item.walletID, walletID]);
   const formattedAmount = useMemo(() => {
     if (!coin) return formatBalanceWithoutSuffix(item.value, itemPriceUnit, true).toString();
     const unit = itemPriceUnit === BitcoinUnit.LOCAL_CURRENCY && !coinHasFiat(coin) ? BitcoinUnit.BTC : itemPriceUnit;
-    const amount = formatBalanceWithoutSuffix(item.value, unit, true).toString();
+    const amount = formatBalanceWithoutSuffix(item.value, unit, true, coin).toString();
     return unit === BitcoinUnit.LOCAL_CURRENCY ? amount : `${amount} ${unitLabel(unit, coin)}`;
   }, [item.value, itemPriceUnit, coin]);
 

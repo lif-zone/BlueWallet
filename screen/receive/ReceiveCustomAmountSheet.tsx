@@ -13,6 +13,7 @@ import loc from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { satoshiToBTC, fiatToBTC } from '../../blue_modules/currency';
+import { useStorage } from '../../hooks/context/useStorage';
 import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsStackParamList';
 
 const ReceiveCustomAmountSheet = () => {
@@ -20,7 +21,16 @@ const ReceiveCustomAmountSheet = () => {
   const route = useRoute<RouteProp<ReceiveDetailsStackParamList, 'ReceiveCustomAmount'>>();
   const { colors } = useTheme();
 
-  const { address, currentLabel = '', currentAmount = '', currentUnit = BitcoinUnit.BTC, preferredUnit = BitcoinUnit.BTC } = route.params;
+  const {
+    address,
+    currentLabel = '',
+    currentAmount = '',
+    currentUnit = BitcoinUnit.BTC,
+    preferredUnit = BitcoinUnit.BTC,
+    walletID,
+  } = route.params;
+  const { wallets } = useStorage();
+  const coin = wallets.find(w => w.getID() === walletID)?.coin;
 
   const [label, setLabel] = useState(currentLabel);
   const [amount, setAmount] = useState(currentAmount);
@@ -58,10 +68,10 @@ const ReceiveCustomAmountSheet = () => {
           normalizedAmount = satoshiToBTC(numericAmount);
           break;
         case BitcoinUnit.LOCAL_CURRENCY:
-          if (AmountInput.conversionCache[trimmedAmount + BitcoinUnit.LOCAL_CURRENCY]) {
-            normalizedAmount = satoshiToBTC(Number(AmountInput.conversionCache[trimmedAmount + BitcoinUnit.LOCAL_CURRENCY]));
+          if (AmountInput.getCachedSatoshis(trimmedAmount, coin)) {
+            normalizedAmount = satoshiToBTC(Number(AmountInput.getCachedSatoshis(trimmedAmount, coin)));
           } else {
-            normalizedAmount = fiatToBTC(numericAmount);
+            normalizedAmount = fiatToBTC(numericAmount, coin);
           }
           break;
         default:
@@ -78,7 +88,7 @@ const ReceiveCustomAmountSheet = () => {
 
       return DeeplinkSchemaMatch.bip21encode(address, options);
     },
-    [address],
+    [address, coin],
   );
 
   const handleLabelChange = useCallback((value: string) => {
@@ -125,7 +135,7 @@ const ReceiveCustomAmountSheet = () => {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
       <View style={styles.flex}>
-        <AmountInput.AmountInput unit={unit} amount={amount || ''} onChangeText={setAmount} onAmountUnitChange={setUnit} />
+        <AmountInput.AmountInput unit={unit} amount={amount || ''} onChangeText={setAmount} onAmountUnitChange={setUnit} coin={coin} />
         <View style={[styles.customAmount, stylesHook.customAmount]}>
           <TextInput
             onChangeText={handleLabelChange}

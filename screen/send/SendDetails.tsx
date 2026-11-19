@@ -1495,7 +1495,9 @@ const SendDetails = () => {
                     break;
                   case BitcoinUnit.LOCAL_CURRENCY:
                     // also accounting for cached fiat->sat conversion to avoid rounding error
-                    addr.amountSats = AmountInput.getCachedSatoshis(String(addr.amount)) || btcToSatoshi(fiatToBTC(Number(addr.amount)));
+                    addr.amountSats =
+                      AmountInput.getCachedSatoshis(String(addr.amount), wallet?.coin) ||
+                      btcToSatoshi(fiatToBTC(Number(addr.amount), wallet?.coin));
                     break;
                 }
 
@@ -1515,7 +1517,7 @@ const SendDetails = () => {
                     item.amountSats = btcToSatoshi(item.amount);
                     break;
                   case BitcoinUnit.LOCAL_CURRENCY:
-                    item.amountSats = btcToSatoshi(fiatToBTC(Number(item.amount)));
+                    item.amountSats = btcToSatoshi(fiatToBTC(Number(item.amount), wallet?.coin));
                     break;
                   case BitcoinUnit.SATS:
                   default:

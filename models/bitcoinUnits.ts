@@ -14,13 +14,12 @@ export type BitcoinUnit = (typeof BitcoinUnit)[keyof typeof BitcoinUnit];
 export type TCoin = {
   /** the names of its units, as shown to the user */
   units: { [BitcoinUnit.BTC]: string; [BitcoinUnit.SATS]: string };
+  /**
+   * The value of one coin, in one currency (`currency` is the key of a FiatUnit, for example 'USD').
+   * The coin may update `rate` at any time. A coin without it has no value in currency.
+   */
+  price?: { currency: string; rate: number };
 };
-
-/**
- * True when amounts of the coin have a value in the currency of the user. Only Bitcoin has one: its the only coin
- * with a price source. The amounts of another coin are shown without a value in currency.
- */
-export const coinHasFiat = (coin?: TCoin): boolean => !coin;
 
 export const Chain = {
   ONCHAIN: 'ONCHAIN',
