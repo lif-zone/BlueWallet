@@ -137,6 +137,8 @@ export type SendDetailsStackParamList = {
     satoshiPerByte: number;
     feeSatoshi?: number;
     headerRight?: HeaderRightRenderer;
+    /** the wallet that sends: amounts are shown in the units of its coin */
+    walletID?: string;
   };
   PsbtMultisig: {
     memo?: string;

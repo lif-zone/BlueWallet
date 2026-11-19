@@ -14,7 +14,7 @@ import TransactionOnchainIcon from '../components/icons/TransactionOnchainIcon';
 import TransactionOutgoingIcon from '../components/icons/TransactionOutgoingIcon';
 import TransactionPendingIcon from '../components/icons/TransactionPendingIcon';
 import loc, { formatBalanceWithoutSuffix, formatTransactionListDate, transactionTimeToReadable, unitLabel } from '../loc';
-import { BitcoinUnit } from '../models/bitcoinUnits';
+import { BitcoinUnit, coinHasFiat } from '../models/bitcoinUnits';
 import { useSettings } from '../hooks/context/useSettings';
 import { useTheme } from './themes';
 import { Action } from './types';
@@ -222,9 +222,15 @@ const TransactionListItemComponent: React.FC<TransactionListItemProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPending, item.timestamp, language, arkRowKind]);
 
+  // The amount of a coin other than Bitcoin is shown with its unit: a list may hold transactions of several coins.
+  // And never in currency, when the coin has no price.
+  const coin = useMemo(() => wallets.find(w => w.getID() === (item.walletID ?? walletID))?.coin, [wallets, item.walletID, walletID]);
   const formattedAmount = useMemo(() => {
-    return formatBalanceWithoutSuffix(item.value, itemPriceUnit, true).toString();
-  }, [item.value, itemPriceUnit]);
+    if (!coin) return formatBalanceWithoutSuffix(item.value, itemPriceUnit, true).toString();
+    const unit = itemPriceUnit === BitcoinUnit.LOCAL_CURRENCY && !coinHasFiat(coin) ? BitcoinUnit.BTC : itemPriceUnit;
+    const amount = formatBalanceWithoutSuffix(item.value, unit, true).toString();
+    return unit === BitcoinUnit.LOCAL_CURRENCY ? amount : `${amount} ${unitLabel(unit, coin)}`;
+  }, [item.value, itemPriceUnit, coin]);
 
   const rowTitle = useMemo(() => {
     if (item.type === 'user_invoice' || item.type === 'payment_request') {
@@ -364,10 +370,10 @@ const TransactionListItemComponent: React.FC<TransactionListItemProps> = ({
   const { label: transactionTypeLabel, icon: avatar } = determineTransactionTypeAndAvatar();
 
   const amountWithUnit = useMemo(() => {
-    const coin = wallets.find(w => w.getID() === walletID)?.coin;
-    const unitSuffix = itemPriceUnit === BitcoinUnit.BTC || itemPriceUnit === BitcoinUnit.SATS ? ` ${unitLabel(itemPriceUnit, coin)}` : ' ';
+    if (coin) return formattedAmount; // has its unit already
+    const unitSuffix = itemPriceUnit === BitcoinUnit.BTC || itemPriceUnit === BitcoinUnit.SATS ? ` ${unitLabel(itemPriceUnit)}` : ' ';
     return `${formattedAmount}${unitSuffix}`;
-  }, [formattedAmount, itemPriceUnit, wallets, walletID]);
+  }, [formattedAmount, itemPriceUnit, coin]);
 
   const onPress = useCallback(async () => {
     // If a custom onPress handler was provided, use it and return
@@ -451,7 +457,11 @@ const TransactionListItemComponent: React.FC<TransactionListItemProps> = ({
     }
   }, [item, navigate, walletID, wallets]);
 
-  const handleOnCopyAmountTap = useCallback(() => Clipboard.setString(rowTitle.replace(/[\s\\-]/g, '')), [rowTitle]);
+  const handleOnCopyAmountTap = useCallback(() => {
+    // the number alone, without the unit of the coin
+    const amount = coin ? rowTitle.replace(/ \S+$/, '') : rowTitle;
+    Clipboard.setString(amount.replace(/[\s\\-]/g, ''));
+  }, [rowTitle, coin]);
   const handleOnCopyTransactionID = useCallback(() => Clipboard.setString(item.hash), [item.hash]);
   const handleOnCopyNote = useCallback(() => Clipboard.setString(noteForCopy ?? ''), [noteForCopy]);
   const handleOnViewOnBlockExplorer = useCallback(() => {

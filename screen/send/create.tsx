@@ -11,9 +11,10 @@ import BlueText from '../../components/BlueText';
 import { writeFileAndExport } from '../../blue_modules/fs';
 import { DynamicQRCode } from '../../components/DynamicQRCode';
 import { useTheme } from '../../components/themes';
-import loc from '../../loc';
+import loc, { unitLabel } from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { useSettings } from '../../hooks/context/useSettings';
+import { useStorage } from '../../hooks/context/useStorage';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
 import { BlueSpacing20 } from '../../components/BlueSpacing';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList';
@@ -28,7 +29,10 @@ const SendCreate = () => {
     psbt,
     showAnimatedQr,
     tx,
+    walletID,
   } = useRoute<RouteProp<SendDetailsStackParamList, 'CreateTransaction'>>().params;
+  const { wallets } = useStorage();
+  const coin = wallets.find(w => w.getID() === walletID)?.coin;
   const transaction = bitcoin.Transaction.fromHex(tx);
   const size = transaction.virtualSize();
   const { isPrivacyBlurEnabled } = useSettings();
@@ -93,7 +97,7 @@ const SendCreate = () => {
           <Text style={[styles.transactionDetailsSubtitle, styleHooks.transactionDetailsSubtitle]}>{formatTransactionOutput(item)}</Text>
           <Text style={[styles.transactionDetailsTitle, styleHooks.transactionDetailsTitle]}>{loc.send.create_amount}</Text>
           <Text style={[styles.transactionDetailsSubtitle, styleHooks.transactionDetailsSubtitle]}>
-            {item.value != null ? `${satoshiToBTC(item.value)} ${BitcoinUnit.BTC}` : '-'}
+            {item.value != null ? `${satoshiToBTC(item.value)} ${unitLabel(BitcoinUnit.BTC, coin)}` : '-'}
           </Text>
           {recipients.length > 1 && (
             <BlueText style={styles.itemOf}>{loc.formatString(loc._.of, { number: index + 1, total: recipients.length })}</BlueText>
@@ -140,7 +144,7 @@ const SendCreate = () => {
     <View>
       <Text style={[styles.transactionDetailsTitle, styleHooks.transactionDetailsTitle]}>{loc.send.create_fee}</Text>
       <Text style={[styles.transactionDetailsSubtitle, styleHooks.transactionDetailsSubtitle]}>
-        {new BigNumber(fee).toFixed()} {BitcoinUnit.BTC}
+        {new BigNumber(fee).toFixed()} {unitLabel(BitcoinUnit.BTC, coin)}
       </Text>
       <Text style={[styles.transactionDetailsTitle, styleHooks.transactionDetailsTitle]}>{loc.send.create_tx_size}</Text>
       <Text style={[styles.transactionDetailsSubtitle, styleHooks.transactionDetailsSubtitle]}>{size} vbytes</Text>

@@ -109,7 +109,7 @@ const AddressItem = ({
     [allowSignVerifyMessage],
   );
 
-  const balance = formatBalance(item.balance ?? 0, balanceUnit, true);
+  const balance = formatBalance(item.balance ?? 0, balanceUnit, true, wallets.find(w => w.getID() === walletID)?.coin);
 
   useEffect(() => {
     if (previousBalance.current !== undefined && previousBalance.current !== balance) {

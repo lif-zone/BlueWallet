@@ -27,7 +27,7 @@ import { HandOffActivityType } from '../../components/types';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import loc, { formatBalance, unitLabel } from '../../loc';
-import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
+import { BitcoinUnit, Chain, coinHasFiat } from '../../models/bitcoinUnits';
 import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsStackParamList';
 import { SuccessView } from '../send/success';
 import { BlueSpacing40 } from '../../components/BlueSpacing';
@@ -337,6 +337,8 @@ const ReceiveDetails = () => {
 
         console.debug('checking address', addressToUse, 'for balance...');
         const electrum = walletElectrum(wallet);
+        // the amount is shown twice: in currency and in coins. A coin without a price: in its two units
+        const secondUnit = coinHasFiat(wallet?.coin) ? BitcoinUnit.LOCAL_CURRENCY : BitcoinUnit.SATS;
         const balance = await electrum.getBalanceByAddress(addressToUse);
         console.debug('...got', balance);
 
@@ -367,7 +369,7 @@ const ReceiveDetails = () => {
 
           setDisplayBalance(
             loc.formatString(loc.transactions.pending_with_amount, {
-              amt1: formatBalance(balance.unconfirmed, BitcoinUnit.LOCAL_CURRENCY, true).toString(),
+              amt1: formatBalance(balance.unconfirmed, secondUnit, true, wallet?.coin).toString(),
               amt2: formatBalance(balance.unconfirmed, BitcoinUnit.BTC, true, wallet?.coin).toString(),
             }),
           );
@@ -385,7 +387,7 @@ const ReceiveDetails = () => {
             setShowAddress(false);
             setDisplayBalance(
               loc.formatString(loc.transactions.received_with_amount, {
-                amt1: formatBalance(balanceToShow, BitcoinUnit.LOCAL_CURRENCY, true).toString(),
+                amt1: formatBalance(balanceToShow, secondUnit, true, wallet?.coin).toString(),
                 amt2: formatBalance(balanceToShow, BitcoinUnit.BTC, true, wallet?.coin).toString(),
               }),
             );

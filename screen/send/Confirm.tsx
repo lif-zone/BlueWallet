@@ -5,7 +5,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import BlueCard from '../../components/BlueCard';
 import { formatTransactionOutput } from '../../helpers/formatTransactionOutput';
 import BlueText from '../../components/BlueText';
-import { BitcoinUnit } from '../../models/bitcoinUnits';
+import { BitcoinUnit, coinHasFiat } from '../../models/bitcoinUnits';
 import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../../loc';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import presentAlert from '../../components/Alert';
@@ -159,8 +159,9 @@ const Confirm: React.FC = () => {
       tx,
       satoshiPerByte,
       feeSatoshi,
+      walletID: wallet.getID(),
     });
-  }, [navigate, fee, recipients, memo, tx, satoshiPerByte, feeSatoshi]);
+  }, [navigate, fee, recipients, memo, tx, satoshiPerByte, feeSatoshi, wallet]);
 
   const HeaderRightButton = useMemo(
     () => (
@@ -318,7 +319,7 @@ const Confirm: React.FC = () => {
           <Text style={[styles.valueUnit, stylesHook.valueValue]}>{' ' + unitLabel(BitcoinUnit.BTC, wallet.coin)}</Text>
         </View>
         <Text style={[styles.transactionAmountFiat, stylesHook.transactionAmountFiat]}>
-          {item.value != null ? satoshiToLocalCurrency(item.value) : null}
+          {item.value != null && coinHasFiat(wallet.coin) ? satoshiToLocalCurrency(item.value) : null}
         </Text>
         <BlueCard>
           <Text style={[styles.transactionDetailsTitle, stylesHook.transactionDetailsTitle]}>{loc.send.create_to}</Text>
@@ -375,7 +376,8 @@ const Confirm: React.FC = () => {
       <View style={styles.cardBottom}>
         <BlueCard>
           <Text style={styles.cardText} testID="TransactionFee">
-            {loc.send.create_fee}: {formatBalance(feeSatoshi, BitcoinUnit.BTC, false, wallet.coin)} ({satoshiToLocalCurrency(feeSatoshi)})
+            {loc.send.create_fee}: {formatBalance(feeSatoshi, BitcoinUnit.BTC, false, wallet.coin)}
+            {coinHasFiat(wallet.coin) ? ` (${satoshiToLocalCurrency(feeSatoshi)})` : ''}
           </Text>
           {state.isLoading ? (
             <ActivityIndicator />

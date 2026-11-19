@@ -45,7 +45,7 @@ import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import useWalletSubscribe from '../../hooks/useWalletSubscribe';
 import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../../loc';
-import { BitcoinUnit } from '../../models/bitcoinUnits';
+import { BitcoinUnit, coinHasFiat } from '../../models/bitcoinUnits';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { isOnChainTransaction, resolveTxDisplayState } from '../../blue_modules/transactionDisplayState';
 import { isWatchOnlySegwitBech32 } from '../../util/isWatchOnlySegwitBech32';
@@ -1018,7 +1018,9 @@ const TransactionStatus: React.FC = () => {
   const parsedConfirmations = Number(tx?.confirmations);
   const isOnChainTx = isOnChainTransaction(tx);
   const isPending = resolveTxDisplayState(tx) === 'pending';
-  const preferredBalanceUnit = wallet?.preferredBalanceUnit ?? BitcoinUnit.BTC;
+  const walletBalanceUnit = wallet?.preferredBalanceUnit ?? BitcoinUnit.BTC;
+  // a coin without a price has no currency unit
+  const preferredBalanceUnit = walletBalanceUnit === BitcoinUnit.LOCAL_CURRENCY && !coinHasFiat(coin) ? BitcoinUnit.BTC : walletBalanceUnit;
   const showBlocksAccordion = isOnChainTx && !isPending && parsedConfirmations > 0;
 
   const onBlocksHeaderPress = useCallback(() => {
@@ -1163,7 +1165,7 @@ const TransactionStatus: React.FC = () => {
               <Text style={[styles.valueUnit, stylesHook.valueUnit]}>{` ${unitLabel(preferredBalanceUnit, coin)}`}</Text>
             )}
           </Text>
-          {txValue !== null && (
+          {txValue !== null && coinHasFiat(coin) && (
             <Text style={[styles.localCurrency, stylesHook.localCurrency, scaledStyles.localCurrency]}>
               {preferredBalanceUnit === BitcoinUnit.LOCAL_CURRENCY
                 ? `${formatBalanceWithoutSuffix(Math.abs(txValue), BitcoinUnit.BTC, true)} ${unitLabel(BitcoinUnit.BTC, coin)}`
@@ -1332,7 +1334,8 @@ const TransactionStatus: React.FC = () => {
             <CopyTextToClipboard
               text={
                 calculatedFee !== null && calculatedFee !== undefined
-                  ? `${formatBalanceWithoutSuffix(calculatedFee, BitcoinUnit.SATS, true)} ${unitLabel(BitcoinUnit.SATS, coin)} / ${satoshiToLocalCurrency(calculatedFee)}`
+                  ? `${formatBalanceWithoutSuffix(calculatedFee, BitcoinUnit.SATS, true)} ${unitLabel(BitcoinUnit.SATS, coin)}` +
+                    (coinHasFiat(coin) ? ` / ${satoshiToLocalCurrency(calculatedFee)}` : '')
                   : '-'
               }
               style={StyleSheet.flatten([styles.detailValue, stylesHook.detailValue])}
