@@ -70,6 +70,8 @@ export type TAddWalletOption = {
   };
   /** selecting it keeps the entropy the user provided. Otherwise the user is asked to drop it */
   keepsEntropy?: boolean;
+  /** the screen asks for an LNDHub address when it is the selected one */
+  asksLndHub?: boolean;
   /** default: always shown */
   isVisible?: (context: TAddWalletContext) => boolean;
   /** default: Create is enabled */
@@ -85,4 +87,20 @@ export function registerAddWalletOption(option: TAddWalletOption): void {
 
 export function getAddWalletOptions(): TAddWalletOption[] {
   return Object.values(addWalletOptions).sort((a, b) => a.order - b.order);
+}
+
+/**
+ * Gives the wallets a mnemonic may belong to, besides the ones the import knows.
+ * The import keeps the ones that were used. When no wallet at all was used, they are offered next to a new wallet.
+ */
+export type TMnemonicImporter = (mnemonic: string, passphrase?: string) => TWallet[];
+
+const mnemonicImporters: TMnemonicImporter[] = [];
+
+export function registerMnemonicImporter(importer: TMnemonicImporter): void {
+  mnemonicImporters.push(importer);
+}
+
+export function getMnemonicImporters(): TMnemonicImporter[] {
+  return mnemonicImporters;
 }

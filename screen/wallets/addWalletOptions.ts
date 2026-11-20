@@ -171,6 +171,7 @@ registerAddWalletOption({
   order: 40,
   testID: 'ActivateLightningButton',
   button: buttonDetails.Lightning,
+  asksLndHub: true,
   isVisible: ({ selectedId, hasStoredLndHub }) => selectedId === Chain.OFFCHAIN || hasStoredLndHub,
   isCreateDisabled: ({ walletBaseURI }) => (walletBaseURI ?? '').trim().length === 0,
   create: createLightningWallet,
