@@ -1,7 +1,7 @@
-// The LIF coin in the app: its wallet type, and its option on the Add Wallet
-// screen. Imported by class/wallet-types.ts.
-import {registerWalletType, registerAddWalletOption}
-  from '../class/wallet-registry.ts';
+// The LIF coin in the app: its wallet type, its option on the Add Wallet
+// screen, and its wallet in Import Wallet. Imported by class/wallet-types.ts.
+import {registerWalletType, registerAddWalletOption,
+  registerMnemonicImporter} from '../class/wallet-registry.ts';
 import triggerHapticFeedback, {HapticFeedbackTypes}
   from '../blue_modules/hapticFeedback.ts';
 import loc from '../loc/index.ts';
@@ -32,4 +32,13 @@ registerAddWalletOption({
     triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
     navigate('PleaseBackup', {walletID: wallet.getID()});
   },
+});
+
+// Import Wallet: a mnemonic may be of a LIF wallet
+registerMnemonicImporter((mnemonic, passphrase)=>{
+  let wallet = new HDLifWallet();
+  wallet.setSecret(mnemonic);
+  if (passphrase)
+    wallet.setPassphrase(passphrase);
+  return [wallet];
 });
