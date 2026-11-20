@@ -1,15 +1,18 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import * as bitcoin from 'bitcoinjs-lib';
 import { ActivityIndicator, Keyboard, Linking, StyleSheet, TextInput, View, Text } from 'react-native';
 
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { HDSegwitBech32Wallet } from '../../class/wallets/hd-segwit-bech32-wallet';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
 import { SettingsSection, SettingsScrollView, settingsCardContent } from '../../components/SettingsSection';
-import loc from '../../loc';
+import loc, { unitLabel } from '../../loc';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
+import SegmentedControl from '../../components/SegmentedControl';
+import { useStorage } from '../../hooks/context/useStorage';
+import type { TWallet } from '../../class/wallets/types';
 import { useSettings } from '../../hooks/context/useSettings';
 import { majorTomToGroundControl } from '../../blue_modules/notifications';
 import { scanQrHelper } from '../../helpers/scan-qr';
@@ -30,6 +33,18 @@ const Broadcast: React.FC = () => {
   const { colors } = useTheme();
   const [broadcastResult, setBroadcastResult] = useState<string>(BROADCAST_RESULT.none);
   const { selectedBlockExplorer } = useSettings();
+  const { wallets } = useStorage();
+  const [networkIndex, setNetworkIndex] = useState(0);
+
+  // one wallet for each network the wallets of the user are on. Bitcoin is always the first
+  const networkWallets = useMemo(() => {
+    const list: (HDSegwitBech32Wallet | TWallet)[] = [new HDSegwitBech32Wallet()];
+    for (const wallet of wallets) {
+      if (!list.some(w => w.electrum === wallet.electrum)) list.push(wallet);
+    }
+    return list;
+  }, [wallets]);
+  const walletObj = networkWallets[networkIndex] ?? networkWallets[0];
 
   const handleScannedData = useCallback((scannedData: string) => {
     if (scannedData.indexOf('+') === -1 && scannedData.indexOf('=') === -1 && scannedData.indexOf('=') === -1) {
@@ -50,10 +65,9 @@ const Broadcast: React.FC = () => {
     Keyboard.dismiss();
     setBroadcastResult(BROADCAST_RESULT.pending);
     try {
-      if (!(await BlueElectrum.ensureConnected())) {
+      if (!(await walletObj.electrum.ensureConnected())) {
         throw new Error(loc.errors.network);
       }
-      const walletObj = new HDSegwitBech32Wallet();
       if (txHex) {
         const result = await walletObj.broadcastTx(txHex);
         if (result) {
@@ -63,7 +77,7 @@ const Broadcast: React.FC = () => {
 
           setBroadcastResult(BROADCAST_RESULT.success);
           triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-          majorTomToGroundControl([], [], [txid]);
+          if (!walletObj.coin) majorTomToGroundControl([], [], [txid]);
         } else {
           setBroadcastResult(BROADCAST_RESULT.error);
         }
@@ -131,6 +145,18 @@ const Broadcast: React.FC = () => {
 
               <BlueSpacing20 />
 
+              {networkWallets.length > 1 && (
+                <>
+                  <SegmentedControl
+                    values={networkWallets.map(w => unitLabel(BitcoinUnit.BTC, w.coin))}
+                    selectedIndex={networkIndex}
+                    onChange={setNetworkIndex}
+                    testID="BroadcastNetwork"
+                  />
+                  <BlueSpacing20 />
+                </>
+              )}
+
               <Button
                 title={loc.send.broadcastButton}
                 onPress={handleBroadcast}
@@ -145,14 +171,16 @@ const Broadcast: React.FC = () => {
               <BlueSpacing20 />
             </>
           )}
-          {BROADCAST_RESULT.success === broadcastResult && tx && <SuccessScreen tx={tx} url={`${selectedBlockExplorer.url}/tx/${tx}`} />}
+          {BROADCAST_RESULT.success === broadcastResult && tx && (
+            <SuccessScreen tx={tx} url={walletObj.coin ? undefined : `${selectedBlockExplorer.url}/tx/${tx}`} />
+          )}
         </View>
       </SettingsSection>
     </SettingsScrollView>
   );
 };
 
-const SuccessScreen: React.FC<{ tx: string; url: string }> = ({ tx, url }) => {
+const SuccessScreen: React.FC<{ tx: string; url?: string }> = ({ tx, url }) => {
   const { colors } = useTheme();
 
   if (!tx) {
@@ -164,8 +192,12 @@ const SuccessScreen: React.FC<{ tx: string; url: string }> = ({ tx, url }) => {
       <BlueBigCheckmark />
       <BlueSpacing20 />
       <Text style={[styles.successText, { color: colors.foregroundColor }]}>{loc.settings.success_transaction_broadcasted}</Text>
-      <BlueSpacing10 />
-      <Button title={loc.settings.open_link_in_explorer} onPress={() => Linking.openURL(url)} />
+      {url && (
+        <>
+          <BlueSpacing10 />
+          <Button title={loc.settings.open_link_in_explorer} onPress={() => Linking.openURL(url)} />
+        </>
+      )}
     </View>
   );
 };

@@ -17,7 +17,7 @@ import MultipleStepsListItem, {
 } from '../../components/MultipleStepsListItem';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
-import loc from '../../loc';
+import loc, { unitLabel } from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { useStorage } from '../../hooks/context/useStorage';
 import { combinePSBTs } from '../../util/combinePSBTs.ts';
@@ -328,7 +328,7 @@ const PsbtMultisig = () => {
           <Text style={[styles.textDestination, stylesHook.textFiat]} selectable>
             {formatTransactionOutput(output)}
             {'\n'}
-            {satoshiToBTC(output.value)} {BitcoinUnit.BTC}
+            {satoshiToBTC(output.value)} {unitLabel(BitcoinUnit.BTC, wallet?.coin)}
           </Text>
         </View>,
       );
@@ -350,7 +350,7 @@ const PsbtMultisig = () => {
               <View style={styles.textBtcUnit}>
                 <BlueText selectable style={stylesHook.textBtcUnitValue}>
                   {' '}
-                  {BitcoinUnit.BTC}
+                  {unitLabel(BitcoinUnit.BTC, wallet?.coin)}
                 </BlueText>
               </View>
             </View>

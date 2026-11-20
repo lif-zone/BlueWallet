@@ -22,6 +22,7 @@ import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import bip39WalletFormatsElectrum from './bip39_wallet_formats.json' with {type: 'json'}; // https://github.com/spesmilo/electrum/blob/master/electrum/bip39_wallet_formats.json
 import bip39WalletFormatsBlueWallet from './bip39_wallet_formats_bluewallet.json' with {type: 'json'};
 import type { TWallet } from './wallets/types';
+import { getMnemonicImporters } from './wallet-registry';
 import { errorMessage } from '../helpers/errorMessage';
 
 // Canonicalize a user-typed derivation path: trim, iOS smart quotes and h/H hardened notation
@@ -373,9 +374,32 @@ const startImport = (
         }
       }
 
+      // the wallets of the other wallet types this seed may belong to
+      const unused: TWallet[] = [];
+      for (const importer of getMnemonicImporters()) {
+        for (const wallet of importer(text, password)) {
+          yield { progress: wallet.typeReadable };
+          let used = false;
+          try {
+            used = await wasUsed(wallet);
+          } catch (e) {
+            console.log('[wallet-import]', wallet.typeReadable, 'check failed:', errorMessage(e));
+          }
+          if (used) {
+            yield { wallet };
+            walletFound = true;
+          } else {
+            unused.push(wallet);
+          }
+        }
+      }
+
       // if we havent found any wallet for this seed suggest new bech32 wallet
       if (!walletFound) {
         yield { wallet: hd2 };
+        for (const wallet of unused) {
+          yield { wallet };
+        }
       }
     }
 

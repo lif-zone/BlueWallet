@@ -268,7 +268,7 @@ const WalletsAdd: React.FC = () => {
             />
           ))}
         </View>
-        {entropy && entropyBytesProvided > 0 && selectedWalletType === Chain.ONCHAIN ? (
+        {entropy && entropyBytesProvided > 0 && selectedOption?.keepsEntropy ? (
           <View style={styles.entropyMixed} testID="EntropyMixedIndicator">
             <Icon name="dice" type="font-awesome-6" size={16} color={colors.alternativeTextColor} />
             <BlueText style={[styles.entropyMixedText, stylesHook.entropyMixedText]}>
@@ -277,7 +277,7 @@ const WalletsAdd: React.FC = () => {
           </View>
         ) : null}
         <View style={styles.advanced}>
-          {selectedWalletType === Chain.OFFCHAIN && (
+          {selectedOption?.asksLndHub && (
             <>
               <BlueSpacing20 />
               <View style={styles.lndhubTitle}>
