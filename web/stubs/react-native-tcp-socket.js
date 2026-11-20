@@ -6,12 +6,6 @@ import {tcp_sock} from 'lif-kernel/tcpip';
 import EventEmitter from 'events';
 
 export class Socket extends tcp_sock {
-  // an 'error' nobody listens to is dropped, not thrown
-  emit(event, ...args){
-    if (event=='error' && !this.listenerCount('error'))
-      return false;
-    return super.emit(event, ...args);
-  }
 }
 
 const events = ['connect', 'secureConnect', 'data', 'end', 'error', 'close',
