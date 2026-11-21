@@ -8,14 +8,17 @@
 - LIF wallet kinds still missing (Bitcoin has them). Each needs its base
   class to use this.network / this.electrum (anycoin), a LIF variant
   (lif_wallet_class) and its way in:
-  - Import: single private key (WIF), single address. A WIF, a 1.../3...
-    address and an xpub are written the same on Bitcoin and LIF: the import
-    must check both networks.
-  - Watch-only wallet (Lpub / xpub, address).
+  - Watch-only wallet (Lpub, address). A 1.../3... address and an xpub are
+    written the same on Bitcoin and LIF: the import must check both
+    networks. Show Lpub for every LIF HD kind (HDlifLegacy, HDlifP2SH and
+    HDlifTaproot show xpub/ypub), and on import of an Lpub check the four
+    kinds.
+  - Import of a private key with a script prefix (p2wpkh:WIF): Bitcoin
+    only.
   - Multisig vault: creation screens, cosigner import, and the PSBT screen
     (screen/send/psbtMultisig.tsx: addresses, fiat and "BTC" fee text assume
     Bitcoin).
   - Other seed formats: Electrum seed, SLIP39, aezeed.
-- HDlifLegacy, HDlifP2SH, HDlifTaproot: a real send on the LIF network was
-  not done yet (signing was tested with a fake coin). Their extended public
-  key is shown as xpub/ypub, not Lpub.
+- The LIF kinds other than HDlif (HD and single-address: Legacy, P2SH,
+  Taproot, single-address SegWit): a real send on the LIF network was not
+  done yet (signing was tested with a fake coin).

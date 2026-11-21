@@ -92,8 +92,10 @@ git push
   there, never copy a wallet class. The base class must use `this.network`
   and `this.electrum` (fix it in anycoin).
 - `lifcoin/hd_lif_wallet.ts`: the HD kinds. `HDlif` (BIP84, default),
-  `HDlifLegacy`, `HDlifP2SH`, `HDlifTaproot`. `lifcoin/index.ts` registers
-  them.
+  `HDlifLegacy`, `HDlifP2SH`, `HDlifTaproot`.
+- `lifcoin/key_lif_wallet.ts`: the single-address kinds (one WIF), made by
+  Import Wallet only. `lifcoin/index.ts` registers all kinds and their
+  importers.
 - `lifcoin/price.ts`: LIF price in USD, fetched every 10 minutes. 0.01
   until the first answer.
 

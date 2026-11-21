@@ -1,15 +1,17 @@
 // The LIF coin in the app: its wallet type, its option on the Add Wallet
 // screen, and its wallet in Import Wallet. Imported by class/wallet-types.ts.
 import {registerWalletType, registerAddWalletOption,
-  registerMnemonicImporter} from '../class/wallet-registry.ts';
+  registerMnemonicImporter, registerWifImporter}
+  from '../class/wallet-registry.ts';
 import triggerHapticFeedback, {HapticFeedbackTypes}
   from '../blue_modules/hapticFeedback.ts';
 import loc from '../loc/index.ts';
 import presentAlert from '../components/Alert.ts';
 import {HDLifWallet, HDLifLegacyWallet, HDLifTaprootWallet,
   hd_lif_wallets} from './hd_lif_wallet.ts';
+import {key_lif_wallets} from './key_lif_wallet.ts';
 
-for (let LifWallet of hd_lif_wallets){
+for (let LifWallet of [...hd_lif_wallets, ...key_lif_wallets]){
   registerWalletType({
     type: LifWallet.type,
     load: json=>LifWallet.fromJson(json),
@@ -67,3 +69,10 @@ registerMnemonicImporter((mnemonic, passphrase)=>hd_lif_wallets.map(
       wallet.setPassphrase(passphrase);
     return wallet;
   }));
+
+// Import Wallet: a private key (WIF) may be of a LIF single-address wallet
+registerWifImporter(wif=>key_lif_wallets.map(LifWallet=>{
+  let wallet = new LifWallet();
+  wallet.setSecret(wif);
+  return wallet;
+}));
