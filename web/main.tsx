@@ -2,6 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import './node_env.js';
 import {html_elm_frag_append} from 'lif-kernel/util';
+import {load_progress} from 'lif-kernel/load_progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getLocales} from 'react-native-localize';
 import {resolveLangCodeFromRnLocales} from '../loc/resolveDeviceLangCode';
@@ -13,7 +14,6 @@ import {texts as toast_texts} from './toast.js';
 import {ark_load} from './arkade.js';
 // the "End-to-end TLS" switch, on the Electrum Server screen
 import './tls_secure.js';
-declare const $lif: any;
 
 // the BlueWallet application icon (the Android launcher icon), in place of
 // the icon of the page that loaded us
@@ -46,14 +46,6 @@ html_elm_frag_append(document.head, `
   </style>
 `);
 
-function LoadingApp(){
-  return <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center',
-    height: '100vh', flexDirection: 'column'}}>
-    <div style={{fontSize: 24, fontWeight: 'bold', marginBottom: 16}}>BlueWallet Web</div>
-    <div id='bw-loading-text' style={{fontSize: 14, opacity: 0.6}}>Loading…</div>
-  </div>;
-}
-
 class ErrorBoundary extends React.Component<{children: any}, {error: any}> {
   constructor(props: any){
     super(props);
@@ -79,7 +71,6 @@ class ErrorBoundary extends React.Component<{children: any}, {error: any}> {
 let _root = document.body.appendChild(document.createElement('div'));
 _root.id = 'root';
 let root = createRoot(_root);
-root.render(<LoadingApp />);
 
 // modules that BlueWallet loads with require() inside ES modules
 async function require_init(){
@@ -183,20 +174,7 @@ async function require_init_early(){
 }
 
 (async()=>{
-  let last: number|null = null;
-  let diff = 0;
-  let iv = setInterval(async()=>{
-    let stats = await $lif.boot.kernel_stats();
-    let all = stats?.fetch?.all;
-    if (all==null || all==last)
-      return;
-    if (last==null)
-      diff = all;
-    last = all;
-    let txt = document.getElementById('bw-loading-text');
-    if (txt)
-      txt.textContent = 'Loading… '+(all-diff);
-  }, 200);
+  let l = load_progress({text: 'Loading BlueWallet…'});
   try {
     await require_init_early();
     await loc_init_early();
@@ -206,10 +184,10 @@ async function require_init_early(){
     let loc = (await import('../loc/index.ts')).default;
     toast_texts.copied = ()=>loc._.copied;
     loc_init_all();
-    clearInterval(iv);
+    l.remove();
     root.render(<ErrorBoundary><App /></ErrorBoundary>);
   } catch(e){
-    clearInterval(iv);
+    l.remove();
     console.error('App load error:', e);
     root.render(<div style={{padding: 32}}>
       <div style={{fontSize: 24, color: '#e74c3c'}}>Load Error</div>
