@@ -95,6 +95,12 @@ class DeeplinkSchemaMatch {
 
     if (event.url.toLowerCase().startsWith('bluewallet:bitcoin:') || event.url.toLowerCase().startsWith('bluewallet:lightning:')) {
       event.url = event.url.substring(11);
+    } else if (
+      event.url.toLowerCase().startsWith('bluewallet:') &&
+      DeeplinkSchemaMatch.coinAddressOfUri(event.url.substring(11), context.wallets) !== undefined
+    ) {
+      // a payment link of a coin other than Bitcoin, as `bluewallet:<scheme>:<address>`
+      event.url = event.url.substring(11);
     } else if (event.url.toLocaleLowerCase().startsWith('bluewallet://widget?action=')) {
       event.url = event.url.substring('bluewallet://'.length);
     }
