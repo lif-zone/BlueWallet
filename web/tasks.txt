@@ -11,9 +11,9 @@ were not exercised yet.
 - Electrum TLS over LIF
   - BlueWallet does not verify TLS (verify==false) because many electrum
     servers are self-signed.
-  - client side TLS disabled, since its slow loading. enable once loading
-    perf improved.
-    - add a button to enable it.
+  - client side TLS is off by default, since its slow loading (about 40s to
+    connect). The "End-to-end TLS" switch on the Electrum Server screen
+    (web/tls_secure.js) turns it on. On by default once loading is faster.
   - TLS for lif_fetch, lif_WebSocket, lif_rpc_websocket.
   - implemented, not yet tested:
     - Negative TLS security tests (validate fails/rejects when configured to)

@@ -1,9 +1,11 @@
 // react-native-tcp-socket for web: TCP and TLS sockets over lif-net, on
 // lif-kernel net/tcpip.js. The real connection is made by a lif-net out
-// node; for TLS, the TLS ends at that node.
+// node; for TLS, the TLS ends at that node, or here when the "End-to-end
+// TLS" switch is on (web/tls_secure.js).
 // BlueWallet uses this module as both 'net' and 'tls' of nodejs.
 import {tcp_sock} from 'lif-kernel/tcpip';
 import EventEmitter from 'events';
+import {tls_socks} from '../tls_secure.js';
 
 export class Socket extends tcp_sock {
 }
@@ -21,6 +23,8 @@ export class TLSSocket extends EventEmitter {
     super();
     this.socket = socket;
     socket.opt.tls = true;
+    tls_socks.add(socket);
+    socket.on('close', ()=>tls_socks.delete(socket));
     if (opt.rejectUnauthorized!==undefined)
       socket.opt.rejectUnauthorized = opt.rejectUnauthorized;
     for (let event of events)
