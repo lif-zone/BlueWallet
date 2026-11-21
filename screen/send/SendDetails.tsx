@@ -202,7 +202,11 @@ const SendDetails = () => {
           memo,
           payjoinUrl: pjUrl,
           disableOutputSubstitution,
-        } = DeeplinkSchemaMatch.decodeBitcoinUri(routeParams.uri, wallet?.coin);
+        } = DeeplinkSchemaMatch.decodeBitcoinUri(
+          routeParams.uri,
+          // the wallet of the route: `wallet` is set only after this
+          (wallets.find(w => w.getID() === routeParams.walletID) ?? wallet)?.coin,
+        );
 
         setAddresses(addrs => {
           addrs[scrollIndex.current].unit = BitcoinUnit.BTC;

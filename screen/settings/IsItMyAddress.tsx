@@ -6,6 +6,7 @@ import { BlueSpacing10, BlueSpacing20 } from '../../components/BlueSpacing';
 import loc from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
 import { TWallet } from '../../class/wallets/types';
+import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { WalletCarouselItem } from '../../components/WalletsCarousel';
 import Divider from '../../components/Divider';
 import Icon from '../../components/Icon';
@@ -33,7 +34,10 @@ const IsItMyAddress: React.FC = () => {
 
   const checkAddress = () => {
     Keyboard.dismiss();
-    const cleanAddress = address.replace('bitcoin:', '').replace('BITCOIN:', '').replace('bitcoin=', '').split('?')[0];
+    // a payment link of the coin of a wallet starts with the scheme of the coin
+    const cleanAddress =
+      DeeplinkSchemaMatch.coinAddressOfUri(address, wallets) ??
+      address.replace('bitcoin:', '').replace('BITCOIN:', '').replace('bitcoin=', '').split('?')[0];
     const matching: TWallet[] = [];
 
     for (const w of wallets) {
@@ -73,7 +77,7 @@ const IsItMyAddress: React.FC = () => {
 
   const importScan = async () => {
     const value = await scanQrHelper();
-    const cleanAddress = value.replace(/^bitcoin(:|=)/i, '').split('?')[0];
+    const cleanAddress = DeeplinkSchemaMatch.coinAddressOfUri(value, wallets) ?? value.replace(/^bitcoin(:|=)/i, '').split('?')[0];
     setAddress(value);
     setResultCleanAddress(cleanAddress);
   };
