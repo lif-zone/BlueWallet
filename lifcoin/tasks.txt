@@ -1,0 +1,9 @@
+# BlueWallet-lif Tasks
+# LIF coin wallets in BlueWallet (lifcoin/, on the anycoin layer)
+
+## Open Tasks
+
+- Add Wallet: the texts of the Lifcoin option ("Lifcoin", "LIF wallet, on
+  the LIF network") are not translated: English in every language.
+- LIF price is fixed at 0.01 USD (lifcoin/network.ts): take it from the
+  network, once there is a source for it.
