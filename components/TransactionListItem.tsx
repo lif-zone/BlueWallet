@@ -15,6 +15,7 @@ import TransactionOutgoingIcon from '../components/icons/TransactionOutgoingIcon
 import TransactionPendingIcon from '../components/icons/TransactionPendingIcon';
 import loc, { formatBalanceWithoutSuffix, formatTransactionListDate, transactionTimeToReadable, unitLabel } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
+import { explorerTxUrl } from '../models/blockExplorer';
 import { coinHasFiat } from '../blue_modules/currency';
 import { useSettings } from '../hooks/context/useSettings';
 import { useTheme } from './themes';
@@ -465,17 +466,20 @@ const TransactionListItemComponent: React.FC<TransactionListItemProps> = ({
   }, [rowTitle, coin]);
   const handleOnCopyTransactionID = useCallback(() => Clipboard.setString(item.hash), [item.hash]);
   const handleOnCopyNote = useCallback(() => Clipboard.setString(noteForCopy ?? ''), [noteForCopy]);
+  // a coin other than Bitcoin has its own block explorer, or none
+  const explorerUrl = item.hash ? explorerTxUrl(selectedBlockExplorer, item.hash, coin) : undefined;
   const handleOnViewOnBlockExplorer = useCallback(() => {
-    const url = `${selectedBlockExplorer.url}/tx/${item.hash}`;
+    if (!explorerUrl) return;
+    const url = explorerUrl;
     Linking.canOpenURL(url).then(supported => {
       if (supported) {
         Linking.openURL(url);
       }
     });
-  }, [item.hash, selectedBlockExplorer]);
+  }, [explorerUrl]);
   const handleCopyOpenInBlockExplorerPress = useCallback(() => {
-    Clipboard.setString(`${selectedBlockExplorer.url}/tx/${item.hash}`);
-  }, [item.hash, selectedBlockExplorer]);
+    if (explorerUrl) Clipboard.setString(explorerUrl);
+  }, [explorerUrl]);
 
   const onToolTipPress = useCallback(
     (id: string) => {
@@ -518,13 +522,13 @@ const TransactionListItemComponent: React.FC<TransactionListItemProps> = ({
       },
       {
         ...CommonToolTipActions.CopyBlockExplorerLink,
-        hidden: !item.hash,
+        hidden: !explorerUrl,
       },
-      [{ ...CommonToolTipActions.OpenInBlockExplorer, hidden: !item.hash }, CommonToolTipActions.Details],
+      [{ ...CommonToolTipActions.OpenInBlockExplorer, hidden: !explorerUrl }, CommonToolTipActions.Details],
     ];
 
     return actions as Action[];
-  }, [rowTitle, noteForCopy, item.hash]);
+  }, [rowTitle, noteForCopy, item.hash, explorerUrl]);
 
   const title = listTitle;
   const subtitle = dateLine;

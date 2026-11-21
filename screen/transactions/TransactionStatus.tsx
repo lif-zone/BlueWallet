@@ -46,6 +46,7 @@ import { useStorage } from '../../hooks/context/useStorage';
 import useWalletSubscribe from '../../hooks/useWalletSubscribe';
 import loc, { formatBalance, formatBalanceWithoutSuffix, unitLabel } from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
+import { explorerTxUrl } from '../../models/blockExplorer';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { isOnChainTransaction, resolveTxDisplayState } from '../../blue_modules/transactionDisplayState';
 import { isWatchOnlySegwitBech32 } from '../../util/isWatchOnlySegwitBech32';
@@ -218,8 +219,9 @@ const TransactionStatus: React.FC = () => {
       transactionID: id,
     };
   }, [hash, hideBalanceInRecentMenu, recentBalanceUnit, recentWalletLabel, transactionId, tx?.value, txMetadata, walletID]);
+  // the accelerator is a service for Bitcoin transactions
   const showMempoolSpeedUp =
-    Boolean(tx?.hash) && isRBFBumpFeePossible === ButtonStatus.NotPossible && isCPFPPossible === ButtonStatus.NotPossible;
+    Boolean(tx?.hash) && !coin && isRBFBumpFeePossible === ButtonStatus.NotPossible && isCPFPPossible === ButtonStatus.NotPossible;
   const handleOpenMempoolAccelerator = useCallback(() => {
     if (!tx?.hash) return;
     Linking.openURL(`https://mempool.space/tx/${tx.hash}#accelerate&partnerCode=bluewallet`).catch(e => {
@@ -238,6 +240,8 @@ const TransactionStatus: React.FC = () => {
   const { colors } = useTheme();
   const { width: windowWidth, fontScale } = useWindowDimensions();
   const { selectedBlockExplorer } = useSettings();
+  // a coin other than Bitcoin has its own block explorer, or none
+  const explorerUrl = tx?.hash && selectedBlockExplorer ? explorerTxUrl(selectedBlockExplorer, tx.hash, coin) : undefined;
   const fetchTxInterval = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const scaledStyles = useMemo(() => {
@@ -887,8 +891,8 @@ const TransactionStatus: React.FC = () => {
   );
 
   const handleOpenBlockExplorer = useCallback(() => {
-    if (!tx?.hash || !selectedBlockExplorer) return;
-    const url = `${selectedBlockExplorer.url}/tx/${tx.hash}`;
+    if (!explorerUrl) return;
+    const url = explorerUrl;
     Linking.canOpenURL(url)
       .then(supported => {
         if (supported) {
@@ -910,7 +914,7 @@ const TransactionStatus: React.FC = () => {
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
         presentAlert({ message: e.message });
       });
-  }, [tx?.hash, selectedBlockExplorer]);
+  }, [explorerUrl]);
 
   const shortenCounterpartyName = (addr: string): string => {
     if (addr.length < 20) return addr;
@@ -1309,7 +1313,7 @@ const TransactionStatus: React.FC = () => {
         title={loc.transactions.details_section}
         containerStyle={styles.sectionMargins}
         headerRight={
-          tx?.hash ? (
+          explorerUrl ? (
             <TouchableOpacity
               onPress={handleOpenBlockExplorer}
               style={[styles.explorerButton, stylesHook.explorerButton, scaledStyles.explorerButton]}

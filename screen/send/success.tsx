@@ -10,6 +10,7 @@ import { useTheme } from '../../components/themes';
 import loc, { unitLabel } from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
+import { explorerTxUrl } from '../../models/blockExplorer';
 import HandOffComponent from '../../components/HandOffComponent';
 import { HandOffActivityType } from '../../components/types';
 import { useSettings } from '../../hooks/context/useSettings';
@@ -28,6 +29,7 @@ const Success = () => {
   const { amount, fee, amountUnit = BitcoinUnit.BTC, invoiceDescription = '', txid, walletID, walletType } = route.params || {};
   const { wallets } = useStorage();
   const coin = wallets.find(w => w.getID() === walletID)?.coin;
+  const explorerUrl = txid ? explorerTxUrl(selectedBlockExplorer, txid, coin) : undefined;
   const stylesHook = StyleSheet.create({
     root: {
       backgroundColor: colors.elevated,
@@ -62,12 +64,8 @@ const Success = () => {
       <View style={styles.buttonContainer}>
         <Button onPress={onDonePressed} title={loc.send.success_done} />
       </View>
-      {txid && (
-        <HandOffComponent
-          title={loc.transactions.details_title}
-          type={HandOffActivityType.ViewInBlockExplorer}
-          url={`${selectedBlockExplorer.url}/tx/${txid}`}
-        />
+      {explorerUrl && (
+        <HandOffComponent title={loc.transactions.details_title} type={HandOffActivityType.ViewInBlockExplorer} url={explorerUrl} />
       )}
     </SafeArea>
   );
