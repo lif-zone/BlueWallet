@@ -29,6 +29,7 @@ export class SegwitBech32Wallet extends LegacyWallet {
       }
       address = bitcoin.payments.p2wpkh({
         pubkey: keyPair.publicKey,
+        network: this.network,
       }).address;
     } catch (err) {
       return false;
@@ -84,7 +85,7 @@ export class SegwitBech32Wallet extends LegacyWallet {
     if (targets.length === 0) throw new Error('No destination provided');
     const { inputs, outputs, fee } = this.coinselect(utxos, targets, feeRate);
     sequence = sequence || 0xffffffff; // disable RBF by default
-    const psbt = new bitcoin.Psbt();
+    const psbt = this._newPsbt();
     let c = 0;
     const keyPair = ECPair.fromWIF(this.secret);
 

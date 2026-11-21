@@ -67,6 +67,7 @@ export class TaprootWallet extends SegwitBech32Wallet {
       const xOnlyPubkey = keyPair.publicKey.subarray(1, 33);
       address = bitcoin.payments.p2tr({
         internalPubkey: xOnlyPubkey,
+        network: this.network,
       }).address;
     } catch (err) {
       console.log(errorMessage(err));
@@ -101,7 +102,7 @@ export class TaprootWallet extends SegwitBech32Wallet {
     });
     if (!p2tr.output) throw new Error('Could not build p2tr.output');
 
-    const psbt = new bitcoin.Psbt();
+    const psbt = this._newPsbt();
 
     // Add Taproot inputs
     inputs.forEach((input, idx) => {
