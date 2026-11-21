@@ -12,7 +12,8 @@ import ClipboardDetectedItem from '../components/ClipboardDetectedItem';
 import { useTheme } from '../components/themes';
 import DeeplinkSchemaMatch from '../class/deeplink-schema-match';
 import { useStorage } from '../hooks/context/useStorage';
-import loc from '../loc';
+import loc, { unitLabel } from '../loc';
+import { BitcoinUnit } from '../models/bitcoinUnits';
 import { navigationRef } from '../NavigationService';
 import { DetailViewStackParamList } from '../navigation/DetailViewStackParamList';
 
@@ -74,7 +75,11 @@ const ClipboardDetected = () => {
     [colors.alternativeTextColor, colors.elevated, colors.lightButton],
   );
 
-  const { kindMessage, actionTitle } = copyForKind(kind);
+  const copy = copyForKind(kind);
+  const actionTitle = copy.actionTitle;
+  // a payment link of a coin other than Bitcoin: the message names the coin
+  const coin = DeeplinkSchemaMatch.coinWalletOfUri(payload, wallets)?.coin;
+  const kindMessage = coin ? loc.formatString(loc.wallets.clipboard_coin, { coin: unitLabel(BitcoinUnit.BTC, coin) }) : copy.kindMessage;
   const accessibilityHint = `${actionTitle}. ${kindMessage}`;
 
   useFocusEffect(

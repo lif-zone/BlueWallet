@@ -21,17 +21,56 @@ type TContext = {
 
 type TBothBitcoinAndLightning = { bitcoin: string; lndInvoice: string } | undefined;
 
+/** what is needed of a wallet to tell if a payment link is of its coin */
+type TCoinUriWallet = {
+  chain: string;
+  coin?: TCoin;
+  allowSend?: () => boolean;
+  isAddressValid?: (address: string) => boolean;
+};
+
 class DeeplinkSchemaMatch {
-  static hasSchema(schemaString: string): boolean {
+  /**
+   * @param wallets the wallets of the user: a payment link of the coin of one of them has a schema too
+   */
+  static hasSchema(schemaString: string, wallets: TCoinUriWallet[] = []): boolean {
     if (typeof schemaString !== 'string' || schemaString.length <= 0) return false;
     const lowercaseString = schemaString.trim().toLowerCase();
     return (
+      DeeplinkSchemaMatch.coinAddressOfUri(schemaString, wallets) !== undefined ||
       lowercaseString.startsWith('bitcoin:') ||
       lowercaseString.startsWith('lightning:') ||
       lowercaseString.startsWith('blue:') ||
       lowercaseString.startsWith('bluewallet:') ||
       lowercaseString.startsWith('lapp:')
     );
+  }
+
+  /**
+   * The address of a payment link of a coin other than Bitcoin: `<scheme>:<address>?...`, where the scheme is the one of
+   * the coin of one of `wallets` (`wallet.coin.uriScheme`). undefined: not such a link.
+   */
+  static coinAddressOfUri(uri: string, wallets: TCoinUriWallet[]): string | undefined {
+    const text = uri.trim().replace('://', ':');
+    for (const wallet of wallets) {
+      const scheme = wallet.coin?.uriScheme;
+      if (scheme && text.toLowerCase().startsWith(`${scheme}:`)) return text.slice(scheme.length + 1).split('?')[0];
+    }
+    return undefined;
+  }
+
+  /**
+   * The wallet to pay a payment link of a coin other than Bitcoin with: the first of `wallets` of that coin that can
+   * send to the address of the link. undefined: not such a link, or no wallet for it.
+   */
+  static coinWalletOfUri<T extends TCoinUriWallet>(uri: string, wallets: T[]): T | undefined {
+    const text = uri.trim().replace('://', ':').toLowerCase();
+    return wallets.find(wallet => {
+      const scheme = wallet.coin?.uriScheme;
+      if (!scheme || !text.startsWith(`${scheme}:`) || wallet.chain !== Chain.ONCHAIN) return false;
+      const address = DeeplinkSchemaMatch.coinAddressOfUri(uri, [wallet]);
+      return Boolean(address && wallet.allowSend?.() && wallet.isAddressValid?.(address));
+    });
   }
 
   /**
@@ -130,6 +169,21 @@ class DeeplinkSchemaMatch {
           context.setSharedCosigner(file);
         })
         .catch(e => console.warn(e));
+    }
+    // a payment link of a coin other than Bitcoin: sent from a wallet of that coin
+    const coinWallet = DeeplinkSchemaMatch.coinWalletOfUri(event.url, context.wallets);
+    if (coinWallet) {
+      completionHandler([
+        'SendDetailsRoot',
+        {
+          screen: 'SendDetails',
+          params: {
+            uri: event.url.trim().replace('://', ':'),
+            walletID: coinWallet.getID(),
+          },
+        },
+      ]);
+      return;
     }
     let isBothBitcoinAndLightning: TBothBitcoinAndLightning;
     try {

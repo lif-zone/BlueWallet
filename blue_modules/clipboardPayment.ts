@@ -6,7 +6,7 @@ import bolt11 from 'bolt11';
 import { ContactList } from '../class/contact-list';
 import DeeplinkSchemaMatch from '../class/deeplink-schema-match';
 import Lnurl from '../class/lnurl';
-import { Chain } from '../models/bitcoinUnits';
+import { Chain, TCoin } from '../models/bitcoinUnits';
 import ecc from './noble_ecc';
 import { uint8ArrayToHex } from './uint8array-extras';
 
@@ -28,6 +28,9 @@ export type ClipboardPayment = {
 
 export type ClipboardOwnershipWallet = {
   chain: string;
+  /** the coin of the wallet, when it is not Bitcoin: a payment link of that coin is a payment too */
+  coin?: TCoin;
+  allowSend?: () => boolean;
   isAddressValid?: (address: string) => boolean;
   weOwnAddress: (address: string) => boolean;
   isInvoiceGeneratedByWallet?: (paymentRequest: string) => boolean;
@@ -74,7 +77,12 @@ function isDecodedLnurl(text: string): boolean {
   }
 }
 
-function classifyNormalized(text: string): ClipboardPayment | null {
+function classifyNormalized(text: string, wallets: ClipboardOwnershipWallet[]): ClipboardPayment | null {
+  // a payment link of a coin other than Bitcoin, that one of the wallets can pay
+  if (DeeplinkSchemaMatch.coinWalletOfUri(text, wallets)) {
+    return { kind: ClipboardPaymentKind.Bitcoin, payload: text };
+  }
+
   const both = DeeplinkSchemaMatch.isBothBitcoinAndLightning(text);
   if (both) {
     const invoice = stripLightningScheme(both.lndInvoice);
@@ -102,22 +110,25 @@ function classifyNormalized(text: string): ClipboardPayment | null {
   return null;
 }
 
-export function classifyClipboardPayment(raw: string | undefined | null): ClipboardPayment | null {
+export function classifyClipboardPayment(
+  raw: string | undefined | null,
+  wallets: ClipboardOwnershipWallet[] = [],
+): ClipboardPayment | null {
   if (typeof raw !== 'string') return null;
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
-  const direct = classifyNormalized(trimmed);
+  const direct = classifyNormalized(trimmed, wallets);
   if (direct) return direct;
 
   if (!/[\r\n]/.test(trimmed)) return null;
   const firstLine = firstNonEmptyLine(trimmed);
   if (!firstLine || firstLine === trimmed) return null;
-  return classifyNormalized(firstLine);
+  return classifyNormalized(firstLine, wallets);
 }
 
 export function isClipboardPaymentFromOwnWallet(payload: string, wallets: ClipboardOwnershipWallet[]): boolean {
-  const scriptAddress = stripBitcoinUriToAddress(payload);
+  const scriptAddress = DeeplinkSchemaMatch.coinAddressOfUri(payload, wallets) ?? stripBitcoinUriToAddress(payload);
   const lightningInvoice = stripLightningScheme(payload);
 
   return wallets.some(wallet => {
@@ -148,7 +159,7 @@ export function evaluateClipboardOnForeground(
   if (!current) {
     return { offer: null, nextHash };
   }
-  const classified = classifyClipboardPayment(current);
+  const classified = classifyClipboardPayment(current, wallets);
   if (!classified || isClipboardPaymentFromOwnWallet(classified.payload, wallets)) {
     return { offer: null, nextHash };
   }

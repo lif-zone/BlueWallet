@@ -407,7 +407,7 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
       hasHandledInitialURL.current = true;
       Linking.getInitialURL()
         .then(url => {
-          if (url && DeeplinkSchemaMatch.hasSchema(url)) {
+          if (url && DeeplinkSchemaMatch.hasSchema(url, wallets)) {
             return handleOpenURL({ url });
           }
         })
