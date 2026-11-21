@@ -3,11 +3,12 @@ import DefaultPreference from 'react-native-default-preference';
 import * as RNLocalize from 'react-native-localize';
 
 import type { TCoin } from '../models/bitcoinUnits';
-import { FiatUnit, TFiatUnit, getFiatRate } from '../models/fiatUnit';
+import { FiatUnit, TFiatUnit, getFiatRate, getFiatToFiatRates } from '../models/fiatUnit';
 
 const PREFERRED_CURRENCY_STORAGE_KEY = 'preferredCurrency';
 const PREFERRED_CURRENCY_LOCALE_STORAGE_KEY = 'preferredCurrencyLocale';
 const EXCHANGE_RATES_STORAGE_KEY = 'exchangeRates';
+const FIAT_RATES_STORAGE_KEY = 'fiatToFiatRates';
 const LAST_UPDATED = 'LAST_UPDATED';
 export const GROUP_IO_BLUEWALLET = 'group.io.bluewallet.bluewallet';
 const BTC_PREFIX = 'BTC_';
@@ -22,7 +23,17 @@ interface ExchangeRates {
   LAST_UPDATED_ERROR: boolean;
 }
 
+/**
+ * Rates between currencies, for a coin with a price in another currency than the one of the user:
+ * `fiatRates.USD.rates.EUR` is the value of one USD in EUR.
+ */
+interface FiatRates {
+  [currency: string]: { updated: number; rates: Record<string, number> };
+}
+
 let preferredFiatCurrency: TFiatUnit = FiatUnit.USD;
+let fiatRates: FiatRates = {};
+const fiatRatesLastTry: Record<string, number> = {};
 let exchangeRates: ExchangeRates = { LAST_UPDATED_ERROR: false };
 let lastTimeUpdateExchangeRateWasCalled: number = 0;
 let skipUpdateExchangeRate: boolean = false;
@@ -142,6 +153,41 @@ async function updateExchangeRate(): Promise<void> {
       exchangeRates = { LAST_UPDATED_ERROR: true };
       throw storageError;
     }
+  }
+}
+
+/**
+ * Fetches the rates from `currency` to the other currencies. Called on each use of such a rate: it fetches twice a day
+ * (the provider updates once a day), and after a failure not more than once a minute.
+ */
+async function updateFiatRates(currency: string): Promise<void> {
+  if (skipUpdateExchangeRate) return;
+  if (Date.now() - (fiatRates[currency]?.updated ?? 0) <= 12 * 60 * 60 * 1000) return;
+  if (Date.now() - (fiatRatesLastTry[currency] ?? 0) <= 60 * 1000) return;
+  fiatRatesLastTry[currency] = Date.now();
+
+  try {
+    const fetched = await getFiatToFiatRates(currency);
+    const rates: Record<string, number> = {};
+    for (const unit of Object.values(FiatUnit)) {
+      const rate = fetched[unit.endPointKey.toLowerCase()];
+      if (typeof rate === 'number' && Number.isFinite(rate) && rate > 0) rates[unit.endPointKey] = rate;
+    }
+    fiatRates[currency] = { updated: Date.now(), rates };
+    await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+    await DefaultPreference.set(FIAT_RATES_STORAGE_KEY, JSON.stringify(fiatRates));
+  } catch (error) {
+    console.warn('Failed to update currency rates:', error);
+  }
+}
+
+async function _restoreSavedFiatRatesFromStorage(): Promise<void> {
+  try {
+    await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+    const ratesValue = await DefaultPreference.get(FIAT_RATES_STORAGE_KEY);
+    if (typeof ratesValue === 'string') fiatRates = JSON.parse(ratesValue) || {};
+  } catch (error) {
+    fiatRates = {};
   }
 }
 
@@ -290,11 +336,13 @@ async function isRateOutdated(): Promise<boolean> {
 
 async function restoreSavedPreferredFiatCurrencyAndExchangeFromStorage(): Promise<void> {
   await _restoreSavedExchangeRatesFromStorage();
+  await _restoreSavedFiatRatesFromStorage();
   await _restoreSavedPreferredFiatCurrencyFromStorage();
 }
 
 async function initCurrencyDaemon(clearLastUpdatedTime: boolean = false): Promise<void> {
   await _restoreSavedExchangeRatesFromStorage();
+  await _restoreSavedFiatRatesFromStorage();
   await _restoreSavedPreferredFiatCurrencyFromStorage();
 
   if (clearLastUpdatedTime) {
@@ -307,17 +355,25 @@ async function initCurrencyDaemon(clearLastUpdatedTime: boolean = false): Promis
 
 /**
  * The value of one coin in the currency of the user. Undefined when its not known.
- * Bitcoin: the exchange rate. Another coin: its own price, when its in the currency of the user.
+ * Bitcoin: the exchange rate. Another coin: its own price. A price in another currency is converted by the rate
+ * between the two currencies (a general purpose currency rate, not through Bitcoin): unknown until its fetched.
  */
 function coinRate(coin?: TCoin): number | undefined {
-  if (coin) return coin.price?.currency === preferredFiatCurrency.endPointKey ? coin.price.rate : undefined;
+  if (coin) {
+    if (!coin.price) return undefined;
+    const { currency, rate } = coin.price;
+    if (currency === preferredFiatCurrency.endPointKey) return rate;
+    updateFiatRates(currency);
+    const fiatRate = fiatRates[currency]?.rates?.[preferredFiatCurrency.endPointKey];
+    return typeof fiatRate === 'number' ? rate * fiatRate : undefined;
+  }
   const exchangeRate = exchangeRates[BTC_PREFIX + preferredFiatCurrency.endPointKey];
   return typeof exchangeRate === 'number' ? exchangeRate : undefined;
 }
 
 /**
  * True when amounts of the coin can be shown in the currency of the user. Bitcoin: always (the rate is fetched).
- * Another coin: when it has a price in that currency. Otherwise its amounts are shown without a value in currency.
+ * Another coin: when it has a price, and the rate to that currency is known. Otherwise its amounts are shown without a value in currency.
  */
 function coinHasFiat(coin?: TCoin): boolean {
   return !coin || coinRate(coin) !== undefined;

@@ -258,3 +258,33 @@ export const FiatUnit = untypedFiatUnit as TFiatUnits;
 export async function getFiatRate(ticker: string): Promise<number> {
   return trySourcesForTicker(ticker);
 }
+
+interface FiatRatesResponse {
+  [ticker: string]: { [ticker: string]: number } | string;
+}
+
+// a general purpose currency rate provider (github.com/fawazahmed0/exchange-api): updated daily, no key. The second is its mirror
+const fiatRatesUrls = (ticker: string): string[] => [
+  `https://latest.currency-api.pages.dev/v1/currencies/${ticker}.json`,
+  `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${ticker}.json`,
+];
+
+/**
+ * The value of one unit of the currency `ticker` in the other currencies, from a general purpose currency rate
+ * provider: not through the price of Bitcoin. The keys are the currencies in lower case, for example 'eur'.
+ */
+export async function getFiatToFiatRates(ticker: string): Promise<Record<string, number>> {
+  const from = ticker.toLowerCase();
+  let lastError: unknown;
+  for (const url of fiatRatesUrls(from)) {
+    try {
+      const json = (await fetchRate(url)) as FiatRatesResponse;
+      const rates = json?.[from];
+      if (!rates || typeof rates !== 'object') throw new Error('Invalid data received');
+      return rates;
+    } catch (error: unknown) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
