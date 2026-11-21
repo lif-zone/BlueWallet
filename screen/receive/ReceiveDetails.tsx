@@ -232,12 +232,12 @@ const ReceiveDetails = () => {
 
   const setAddressBIP21Encoded = useCallback(
     (addr: string) => {
-      const newBip21encoded = DeeplinkSchemaMatch.bip21encode(addr);
+      const newBip21encoded = DeeplinkSchemaMatch.bip21encode(addr, undefined, wallet?.coin);
       setParams({ address: addr });
       setBip21encoded(newBip21encoded);
       setShowAddress(true);
     },
-    [setParams],
+    [setParams, wallet],
   );
 
   const obtainWalletAddress = useCallback(async () => {
@@ -334,7 +334,7 @@ const ReceiveDetails = () => {
 
     const intervalId = setInterval(async () => {
       try {
-        const decoded = DeeplinkSchemaMatch.bip21decode(bip21encoded);
+        const decoded = DeeplinkSchemaMatch.bip21decode(bip21encoded, wallet?.coin);
         const addressToUse = address || decoded.address;
         if (!addressToUse) return;
 
@@ -595,6 +595,7 @@ const ReceiveDetails = () => {
                   text={copyText}
                   displayText={displayCopyText}
                   isAddress={isAddressTab}
+                  uriScheme={wallet?.coin?.uriScheme}
                   truncated={false}
                   interactive={false}
                 />

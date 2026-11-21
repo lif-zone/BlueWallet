@@ -19,6 +19,8 @@ export type TCoin = {
    * The coin may update `rate` at any time. A coin without it has no value in currency.
    */
   price?: { currency: string; rate: number };
+  /** The scheme of its payment links: `<uriScheme>:<address>?amount=...`. A coin without it uses 'bitcoin'. */
+  uriScheme?: string;
 };
 
 export const Chain = {

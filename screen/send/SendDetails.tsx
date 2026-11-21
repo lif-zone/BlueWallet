@@ -202,7 +202,7 @@ const SendDetails = () => {
           memo,
           payjoinUrl: pjUrl,
           disableOutputSubstitution,
-        } = DeeplinkSchemaMatch.decodeBitcoinUri(routeParams.uri);
+        } = DeeplinkSchemaMatch.decodeBitcoinUri(routeParams.uri, wallet?.coin);
 
         setAddresses(addrs => {
           addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
@@ -508,7 +508,9 @@ const SendDetails = () => {
 
       const cl = new ContactList();
 
-      const dataWithoutSchema = data.replace('bitcoin:', '').replace('BITCOIN:', '');
+      // the payment links of another coin start with its own scheme
+      const scheme = wallet.coin?.uriScheme ?? 'bitcoin';
+      const dataWithoutSchema = data.replace(`${scheme}:`, '').replace(`${scheme.toUpperCase()}:`, '');
       if (wallet.isAddressValid(dataWithoutSchema) || cl.isPaymentCodeValid(dataWithoutSchema)) {
         setAddresses(addrs => {
           addrs[scrollIndex.current].address = dataWithoutSchema;
@@ -522,13 +524,13 @@ const SendDetails = () => {
       let address = '';
       let options: TOptions;
       try {
-        if (!data.toLowerCase().startsWith('bitcoin:')) data = `bitcoin:${data}`;
-        const decoded = DeeplinkSchemaMatch.bip21decode(data);
+        if (!data.toLowerCase().startsWith(`${scheme}:`)) data = `${scheme}:${data}`;
+        const decoded = DeeplinkSchemaMatch.bip21decode(data, wallet.coin);
         address = decoded.address;
         options = decoded.options;
       } catch (error) {
         data = data.replace(/(amount)=([^&]+)/g, '').replace(/(amount)=([^&]+)&/g, '');
-        const decoded = DeeplinkSchemaMatch.bip21decode(data);
+        const decoded = DeeplinkSchemaMatch.bip21decode(data, wallet.coin);
         decoded.options.amount = 0;
         address = decoded.address;
         options = decoded.options;
@@ -1560,7 +1562,7 @@ const SendDetails = () => {
                 memo,
                 payjoinUrl: pjUrl,
                 disableOutputSubstitution,
-              } = DeeplinkSchemaMatch.decodeBitcoinUri(trimmedText);
+              } = DeeplinkSchemaMatch.decodeBitcoinUri(trimmedText, wallet?.coin);
               const hasPositiveAmount = Number(amount) > 0;
               setAddresses(addrs => {
                 const updatedAddresses = [...addrs];
