@@ -21,6 +21,8 @@ type CopyTextToClipboardProps = TextProps & {
   copiedContainerStyle?: ViewStyle;
   copiedTextStyle?: TextStyle;
   isAddress?: boolean;
+  /** the scheme of a payment link in the text, when it is not 'bitcoin' (the link of another coin) */
+  uriScheme?: string;
   interactive?: boolean;
   buttonTestID?: string;
   textTestID?: string;
@@ -66,6 +68,7 @@ const CopyTextToClipboard = forwardRef<CopyTextToClipboardHandle, CopyTextToClip
       copiedTextStyle,
       accessibilityLabel,
       isAddress,
+      uriScheme = 'bitcoin',
       interactive = true,
       buttonTestID = 'CopyTextToClipboard',
       textTestID = 'AddressValue',
@@ -164,9 +167,9 @@ const CopyTextToClipboard = forwardRef<CopyTextToClipboardHandle, CopyTextToClip
         );
       }
 
-      if (displayText.toLocaleLowerCase().startsWith('bitcoin:')) {
-        const prefix = displayText.slice(0, 8); // "bitcoin:"
-        const afterPrefix = displayText.slice(8);
+      if (displayText.toLocaleLowerCase().startsWith(`${uriScheme}:`)) {
+        const prefix = displayText.slice(0, uriScheme.length + 1); // "bitcoin:"
+        const afterPrefix = displayText.slice(uriScheme.length + 1);
         const qIndex = afterPrefix.indexOf('?');
         const addrPart = qIndex === -1 ? afterPrefix : afterPrefix.slice(0, qIndex);
         const queryPart = qIndex === -1 ? '' : afterPrefix.slice(qIndex);

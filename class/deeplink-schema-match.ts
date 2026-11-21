@@ -2,7 +2,7 @@ import bip21, { TOptions } from 'bip21';
 import * as bitcoin from 'bitcoinjs-lib';
 import URL from 'url';
 import { readFileOutsideSandbox } from '../blue_modules/fs';
-import { Chain } from '../models/bitcoinUnits';
+import { Chain, TCoin } from '../models/bitcoinUnits';
 import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import Azteco from './azteco';
 import { ContactList } from './contact-list';
@@ -396,19 +396,26 @@ class DeeplinkSchemaMatch {
     return undefined;
   }
 
-  static bip21decode(uri?: string) {
+  /**
+   * @param coin the coin of the payment link, when it is not Bitcoin: its links start with its own scheme
+   */
+  static bip21decode(uri?: string, coin?: TCoin) {
     if (!uri) {
       throw new Error('No URI provided');
     }
+    const scheme = coin?.uriScheme ?? 'bitcoin';
     let replacedUri = uri;
-    for (const replaceMe of ['BITCOIN://', 'bitcoin://', 'BITCOIN:']) {
-      replacedUri = replacedUri.replace(replaceMe, 'bitcoin:');
+    for (const replaceMe of [`${scheme.toUpperCase()}://`, `${scheme}://`, `${scheme.toUpperCase()}:`]) {
+      replacedUri = replacedUri.replace(replaceMe, `${scheme}:`);
     }
 
-    return bip21.decode(replacedUri);
+    return bip21.decode(replacedUri, scheme);
   }
 
-  static bip21encode(address: string, options?: TOptions): string {
+  /**
+   * @param coin the coin of the address, when it is not Bitcoin: the link starts with its own scheme
+   */
+  static bip21encode(address: string, options?: TOptions, coin?: TCoin): string {
     // uppercase address if bech32 to satisfy BIP_0173
     const isBech32 = address.startsWith('bc1');
     if (isBech32) {
@@ -423,17 +430,20 @@ class DeeplinkSchemaMatch {
         delete options[key];
       }
     }
-    return bip21.encode(address, options);
+    return bip21.encode(address, options, coin?.uriScheme);
   }
 
-  static decodeBitcoinUri(uri: string) {
+  /**
+   * @param coin the coin of the payment link, when it is not Bitcoin
+   */
+  static decodeBitcoinUri(uri: string, coin?: TCoin) {
     let amount;
     let address = uri || '';
     let memo = '';
     let payjoinUrl = '';
     let disableOutputSubstitution = false;
     try {
-      const parsedBitcoinUri = DeeplinkSchemaMatch.bip21decode(uri);
+      const parsedBitcoinUri = DeeplinkSchemaMatch.bip21decode(uri, coin);
       address = parsedBitcoinUri.address ? parsedBitcoinUri.address.toString() : address;
       if ('options' in parsedBitcoinUri) {
         if (parsedBitcoinUri.options.amount) {

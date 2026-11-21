@@ -55,7 +55,7 @@ const ReceiveCustomAmountSheet = () => {
     (nextAmount: string, nextUnit: BitcoinUnit, nextLabel: string): string => {
       const trimmedAmount = nextAmount.trim();
       if (trimmedAmount.length === 0) {
-        return nextLabel ? DeeplinkSchemaMatch.bip21encode(address, { label: nextLabel }) : DeeplinkSchemaMatch.bip21encode(address);
+        return DeeplinkSchemaMatch.bip21encode(address, nextLabel ? { label: nextLabel } : undefined, coin);
       }
 
       let normalizedAmount: string | number = trimmedAmount;
@@ -86,7 +86,7 @@ const ReceiveCustomAmountSheet = () => {
         options.label = nextLabel;
       }
 
-      return DeeplinkSchemaMatch.bip21encode(address, options);
+      return DeeplinkSchemaMatch.bip21encode(address, options, coin);
     },
     [address, coin],
   );
@@ -118,7 +118,7 @@ const ReceiveCustomAmountSheet = () => {
 
   const handleReset = useCallback(() => {
     const fallbackUnit = preferredUnit || BitcoinUnit.BTC;
-    const encoded = DeeplinkSchemaMatch.bip21encode(address);
+    const encoded = DeeplinkSchemaMatch.bip21encode(address, undefined, coin);
     navigation.popTo(
       'ReceiveDetails',
       {
@@ -130,7 +130,7 @@ const ReceiveCustomAmountSheet = () => {
       },
       { merge: true },
     );
-  }, [address, navigation, preferredUnit]);
+  }, [address, coin, navigation, preferredUnit]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
