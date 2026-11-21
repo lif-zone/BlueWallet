@@ -19,12 +19,14 @@ export const lif_network: bitcoin.Network = {
 // price update sets lif_coin.price.rate.
 export const LIF_USD_DEFAULT = 0.01;
 
-// how LIF amounts are shown: 1 LIF is 100,000,000 sats. Its price. And
-// its payment links: lifcoin:lif1...?amount=...
+// how LIF amounts are shown: 1 LIF is 100,000,000 sats. Its price. Its
+// payment links: lifcoin:lif1...?amount=... And its block explorer (the
+// code of blockstream.info): a transaction is at <explorer>/tx/<txid>
 export const lif_coin = {
   units: {BTC: 'LIF', sats: 'sats'},
   price: {currency: 'USD', rate: LIF_USD_DEFAULT},
   uriScheme: 'lifcoin',
+  explorer: 'https://explorer.pub.site',
 };
 
 // BIP44 coin type: m/84'/1842'/0'
