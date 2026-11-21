@@ -8,11 +8,13 @@
 - LIF wallet kinds still missing (Bitcoin has them). Each needs its base
   class to use this.network / this.electrum (anycoin), a LIF variant
   (lif_wallet_class) and its way in:
-  - Watch-only wallet (Lpub, address). A 1.../3... address and an xpub are
-    written the same on Bitcoin and LIF: the import must check both
-    networks. Show Lpub for every LIF HD kind (HDlifLegacy, HDlifP2SH and
-    HDlifTaproot show xpub/ypub), and on import of an Lpub check the four
-    kinds.
+  - Watch-only: an Lpub inside a descriptor (wpkh([fp/path]Lpub...)) or as
+    [fp/path]Lpub is not read: a bare Lpub and an address are. So the
+    Taproot watch-only export (a tr(...) descriptor) does not import back.
+    ypub / zpub texts are checked on Bitcoin only.
+  - Watch-only with an external signer (hardware wallet, PSBT screens): the
+    PSBT is made and an HD wallet cosigns it, but the screens were not run
+    for LIF. Taproot: cosignPsbt does not finalize (same on Bitcoin).
   - Import of a private key with a script prefix (p2wpkh:WIF): Bitcoin
     only.
   - Multisig vault: creation screens, cosigner import, and the PSBT screen

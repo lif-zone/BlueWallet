@@ -94,8 +94,11 @@ git push
 - `lifcoin/hd_lif_wallet.ts`: the HD kinds. `HDlif` (BIP84, default),
   `HDlifLegacy`, `HDlifP2SH`, `HDlifTaproot`.
 - `lifcoin/key_lif_wallet.ts`: the single-address kinds (one WIF), made by
-  Import Wallet only. `lifcoin/index.ts` registers all kinds and their
-  importers.
+  Import Wallet only.
+- `lifcoin/watch_lif_wallet.ts`: watch-only, of an address or an Lpub.
+- Every LIF HD kind shows its extended public key as `Lpub`. An Lpub does
+  not say the kind of address: the import checks the four kinds.
+- `lifcoin/index.ts` registers all kinds and their importers.
 - `lifcoin/price.ts`: LIF price in USD, fetched every 10 minutes. 0.01
   until the first answer.
 

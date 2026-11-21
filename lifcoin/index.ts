@@ -1,7 +1,7 @@
 // The LIF coin in the app: its wallet type, its option on the Add Wallet
 // screen, and its wallet in Import Wallet. Imported by class/wallet-types.ts.
 import {registerWalletType, registerAddWalletOption,
-  registerMnemonicImporter, registerWifImporter}
+  registerMnemonicImporter, registerWifImporter, registerWatchOnlyImporter}
   from '../class/wallet-registry.ts';
 import triggerHapticFeedback, {HapticFeedbackTypes}
   from '../blue_modules/hapticFeedback.ts';
@@ -10,6 +10,8 @@ import presentAlert from '../components/Alert.ts';
 import {HDLifWallet, HDLifLegacyWallet, HDLifTaprootWallet,
   hd_lif_wallets} from './hd_lif_wallet.ts';
 import {key_lif_wallets} from './key_lif_wallet.ts';
+import {LifWatchOnlyWallet, lif_watch_only_wallets}
+  from './watch_lif_wallet.ts';
 
 for (let LifWallet of [...hd_lif_wallets, ...key_lif_wallets]){
   registerWalletType({
@@ -76,3 +78,18 @@ registerWifImporter(wif=>key_lif_wallets.map(LifWallet=>{
   wallet.setSecret(wif);
   return wallet;
 }));
+
+registerWalletType({
+  type: LifWatchOnlyWallet.type,
+  load: json=>{
+    let wallet = LifWatchOnlyWallet.fromJson(json);
+    wallet.init();
+    if (wallet.isHd() && !wallet.isXpubValid())
+      return;
+    return wallet;
+  },
+});
+
+// Import Wallet: an address or an extended public key may be of a LIF
+// watch-only wallet
+registerWatchOnlyImporter(lif_watch_only_wallets);
