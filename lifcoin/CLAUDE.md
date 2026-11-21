@@ -101,6 +101,9 @@ git push
 - `lifcoin/key_lif_wallet.ts`: the single-address kinds (one WIF), made by
   Import Wallet only.
 - `lifcoin/watch_lif_wallet.ts`: watch-only, of an address or an Lpub.
+- `lifcoin/seed_lif_wallet.ts`: HD wallets of an Electrum seed (paths
+  without a coin type: the keys of the Bitcoin wallet) and of SLIP39
+  shares. Made by Import Wallet only.
 - `lifcoin/multisig_lif_wallet.ts`: multisig vault. Paths
   `m/48'/1842'/0'/2'` (and `/1'`, `m/45'/1842'`): the coin type tells a LIF
   setup file from a Bitcoin one. Cosigner keys are written as on Bitcoin

@@ -29,7 +29,7 @@ export function lpub_of(xpub: string): string {
 // The base class keeps its extended public key as an xpub or a ypub, which
 // say the kind of address on Bitcoin. LIF has one prefix, Lpub: its the one
 // shown for every kind. The base class reads a key of any prefix.
-function lpub_class<T extends new(...args: any[])=>any>(Base: T){
+export function lpub_class<T extends new(...args: any[])=>any>(Base: T){
   return class extends Base {
     getXpub(){
       return lpub_of(super.getXpub());

@@ -22,7 +22,10 @@
     cosigner key given as an xpub with a LIF path is not converted to
     Ypub/Zpub (class/multisig-cosigner.ts does it for the Bitcoin paths);
     texts of the "Lifcoin Vault" option are not translated.
-  - Other seed formats: Electrum seed, SLIP39, aezeed.
+  - aezeed (the seed of the lnd Lightning node): no LIF wallet for it. Its
+    path is fixed to Bitcoin's in class/wallets/hd-aezeed-wallet.ts.
+  - Electrum seed, SLIP39: the import logic was tested, not the Import
+    Wallet screens (several SLIP39 shares, passphrase).
 - The LIF kinds other than HDlif (HD and single-address: Legacy, P2SH,
   Taproot, single-address SegWit): a real send on the LIF network was not
   done yet (signing was tested with a fake coin).

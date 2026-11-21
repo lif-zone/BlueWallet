@@ -2,7 +2,7 @@
 // screen, and its wallet in Import Wallet. Imported by class/wallet-types.ts.
 import {registerWalletType, registerAddWalletOption,
   registerMnemonicImporter, registerWifImporter, registerWatchOnlyImporter,
-  registerMultisigWallet}
+  registerMultisigWallet, registerSeedImporter}
   from '../class/wallet-registry.ts';
 import triggerHapticFeedback, {HapticFeedbackTypes}
   from '../blue_modules/hapticFeedback.ts';
@@ -14,8 +14,11 @@ import {key_lif_wallets} from './key_lif_wallet.ts';
 import {LifWatchOnlyWallet, lif_watch_only_wallets}
   from './watch_lif_wallet.ts';
 import {LifMultisigWallet} from './multisig_lif_wallet.ts';
+import {seed_lif_wallets, lif_seed_wallets} from './seed_lif_wallet.ts';
 
-for (let LifWallet of [...hd_lif_wallets, ...key_lif_wallets]){
+for (let LifWallet of [...hd_lif_wallets, ...key_lif_wallets,
+  ...seed_lif_wallets])
+{
   registerWalletType({
     type: LifWallet.type,
     load: json=>LifWallet.fromJson(json),
@@ -128,3 +131,6 @@ registerAddWalletOption({
     });
   },
 });
+
+// Import Wallet: an Electrum seed or SLIP39 shares may be of a LIF wallet
+registerSeedImporter(lif_seed_wallets);
