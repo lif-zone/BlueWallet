@@ -430,7 +430,8 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
       await w.fetchBalance();
       try {
-        await majorTomToGroundControl(w.getAllExternalAddresses(), [], []);
+        // push notifications are of Bitcoin: nothing of another coin is sent to their server
+        if (!w.coin) await majorTomToGroundControl(w.getAllExternalAddresses(), [], []);
       } catch (error) {
         console.warn('Failed to setup notifications:', error);
         // Consider if user should be notified of notification setup failure

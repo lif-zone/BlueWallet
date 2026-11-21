@@ -244,7 +244,8 @@ const Confirm: React.FC = () => {
       }
 
       txidsToWatch.push(bitcoin.Transaction.fromHex(tx).getId());
-      majorTomToGroundControl([], [], txidsToWatch);
+      // push notifications are of Bitcoin: nothing of another coin is sent to their server
+      if (!wallet.coin) majorTomToGroundControl([], [], txidsToWatch);
       let amount = 0;
       for (const recipient of recipients) {
         if (recipient.value) {

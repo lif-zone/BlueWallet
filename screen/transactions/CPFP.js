@@ -133,7 +133,8 @@ export default class CPFP extends Component {
 
   onSuccessBroadcast() {
     this.context.txMetadata[this.state.newTxid] = { memo: 'Child pays for parent (CPFP)' };
-    majorTomToGroundControl([], [], [this.state.newTxid]);
+    // push notifications are of Bitcoin: nothing of another coin is sent to their server
+    if (!this.state.wallet.coin) majorTomToGroundControl([], [], [this.state.newTxid]);
     this.context.sleep(4000).then(() => this.context.fetchAndSaveWalletTransactions(this.state.wallet.getID()));
     this.props.navigation.navigate('Success', {
       amount: undefined,
