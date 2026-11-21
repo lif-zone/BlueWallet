@@ -21,6 +21,8 @@ export type TCoin = {
   price?: { currency: string; rate: number };
   /** The scheme of its payment links: `<uriScheme>:<address>?amount=...`. A coin without it uses 'bitcoin'. */
   uriScheme?: string;
+  /** Its block explorer: a transaction is at `<explorer>/tx/<txid>`. A coin without it has no links to an explorer. */
+  explorer?: string;
 };
 
 export const Chain = {

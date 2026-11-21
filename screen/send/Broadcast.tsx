@@ -10,6 +10,7 @@ import { useTheme } from '../../components/themes';
 import { SettingsSection, SettingsScrollView, settingsCardContent } from '../../components/SettingsSection';
 import loc, { unitLabel } from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
+import { explorerTxUrl } from '../../models/blockExplorer';
 import SegmentedControl from '../../components/SegmentedControl';
 import { useStorage } from '../../hooks/context/useStorage';
 import type { TWallet } from '../../class/wallets/types';
@@ -172,7 +173,7 @@ const Broadcast: React.FC = () => {
             </>
           )}
           {BROADCAST_RESULT.success === broadcastResult && tx && (
-            <SuccessScreen tx={tx} url={walletObj.coin ? undefined : `${selectedBlockExplorer.url}/tx/${tx}`} />
+            <SuccessScreen tx={tx} url={explorerTxUrl(selectedBlockExplorer, tx, walletObj.coin)} />
           )}
         </View>
       </SettingsSection>

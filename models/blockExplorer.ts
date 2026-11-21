@@ -1,5 +1,6 @@
 // blockExplorer.ts
 import DefaultPreference from 'react-native-default-preference';
+import type { TCoin } from './bitcoinUnits';
 
 export interface BlockExplorer {
   key: string;
@@ -20,6 +21,16 @@ export const getBlockExplorersList = (): BlockExplorer[] => {
 
 export const normalizeUrl = (url: string): string => {
   return url.replace(/\/+$/, '');
+};
+
+/**
+ * The link of a transaction in a block explorer.
+ * @param explorer the block explorer the user chose, for Bitcoin
+ * @param coin the coin of the transaction, when it is not Bitcoin: it has its own explorer, or no link at all
+ */
+export const explorerTxUrl = (explorer: BlockExplorer, txid: string, coin?: TCoin): string | undefined => {
+  if (coin) return coin.explorer ? `${normalizeUrl(coin.explorer)}/tx/${txid}` : undefined;
+  return `${explorer.url}/tx/${txid}`;
 };
 
 export const isValidUrl = (url: string): boolean => {
