@@ -2,8 +2,8 @@
 # Porting BlueWallet (React Native) to run on web via lif-kernel at port 4202
 
 ## Current Status
-App loads and renders the wallets list. Send, SLIP39 and Lightning/Ark flows
-were not exercised yet.
+App loads and renders the wallets list. Send and Lightning/Ark flows
+were not exercised yet. SLIP39: import logic tested, not the screens.
 
 
 ## Open Tasks
