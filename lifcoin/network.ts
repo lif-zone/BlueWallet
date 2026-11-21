@@ -15,8 +15,8 @@ export const lif_network: bitcoin.Network = {
   wif: 0x80,
 };
 
-// The value of one LIF in USD, until the network gives a price: a later
-// price update sets lif_coin.price.rate.
+// The value of one LIF in USD, until the network gives a price:
+// lifcoin/price.ts sets lif_coin.price.rate.
 export const LIF_USD_DEFAULT = 0.01;
 
 // how LIF amounts are shown: 1 LIF is 100,000,000 sats. Its price. Its

@@ -86,8 +86,10 @@ git push
 - Verbose transactions are built from the hex: the node gives few fields.
 - No `blockchain.scripthash.get_mempool`: mempool comes from the history.
 - One fee rate, about 5000 sat/vbyte. Caches in memory only.
-- `lifcoin/network.ts`: bech32 `lif`, path `m/84'/1842'/0'`, price fixed
-  at 0.01 USD. `lifcoin/index.ts` registers `HDLifWallet`.
+- `lifcoin/network.ts`: bech32 `lif`, path `m/84'/1842'/0'`.
+  `lifcoin/index.ts` registers `HDLifWallet`.
+- `lifcoin/price.ts`: LIF price in USD, fetched every 10 minutes. 0.01
+  until the first answer.
 
 ## Tests
 

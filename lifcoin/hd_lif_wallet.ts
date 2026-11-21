@@ -8,6 +8,7 @@ import type {TWalletElectrum} from '../class/wallets/legacy-wallet.ts';
 import {lif_network, lif_coin, LIF_COIN_TYPE, LIF_MAX_FEE_RATE}
   from './network.ts';
 import * as lif_electrum from './electrum.ts';
+import {lif_price_update} from './price.ts';
 
 const XPUB_VERSION = 0x0488b21e;
 
@@ -38,6 +39,8 @@ export class HDLifWallet extends HDSegwitBech32Wallet {
   }
 
   get coin(){
+    // keeps the price fresh, while LIF amounts are shown
+    lif_price_update();
     return lif_coin;
   }
 
