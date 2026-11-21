@@ -5,6 +5,7 @@ import {registerWalletType, registerAddWalletOption,
 import triggerHapticFeedback, {HapticFeedbackTypes}
   from '../blue_modules/hapticFeedback.ts';
 import loc from '../loc/index.ts';
+import presentAlert from '../components/Alert.ts';
 import {HDLifWallet} from './hd_lif_wallet.ts';
 
 registerWalletType({
@@ -23,10 +24,22 @@ registerAddWalletOption({
     explain: 'LIF wallet, on the LIF network',
     borderColorActive: 'newBlue',
   },
-  create: async({label, addWallet, saveToDisk, navigate})=>{
+  // entropy the user provided (dice rolls) is mixed into the new wallet
+  keepsEntropy: true,
+  create: async({label, entropy, addWallet, saveToDisk, navigate})=>{
     let wallet = new HDLifWallet();
     wallet.setLabel(label||loc.wallets.details_title);
-    await wallet.generate();
+    if (entropy){
+      try {
+        await wallet.generateFromEntropy(entropy);
+      } catch(e){
+        console.log(''+e);
+        presentAlert({message: ''+e});
+        return;
+      }
+    }
+    else
+      await wallet.generate();
     addWallet(wallet);
     await saveToDisk();
     triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
