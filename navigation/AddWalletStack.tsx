@@ -12,6 +12,7 @@ import { HDLegacyP2PKHWallet } from '../class/wallets/hd-legacy-p2pkh-wallet';
 import { HDSegwitBech32Wallet } from '../class/wallets/hd-segwit-bech32-wallet';
 import { HDTaprootWallet } from '../class/wallets/hd-taproot-wallet';
 import { LightningCustodianWallet } from '../class/wallets/lightning-custodian-wallet';
+import { getAddWalletOptions } from '../class/wallet-registry';
 import loc from '../loc';
 import { Chain } from '../models/bitcoinUnits';
 import { CommonToolTipActions } from '../typings/CommonToolTipActions';
@@ -170,6 +171,10 @@ const createAddWalletOptions = (theme: ReturnType<typeof useTheme>) =>
     (options, { navigation, route }) => {
       const selectedIndex = route.params?.selectedIndex ?? 0;
       const selectedWalletType = route.params?.selectedWalletType ?? Chain.ONCHAIN;
+      // the option the kind of wallet and the entropy are chosen for: the selected one, when they apply to it
+      const selectedOption = getAddWalletOptions().find(option => option.id === selectedWalletType);
+      const kindWalletType = selectedOption?.usesKindMenu ? selectedWalletType : Chain.ONCHAIN;
+      const entropyWalletType = selectedOption?.keepsEntropy ? selectedWalletType : Chain.ONCHAIN;
       const words = route.params?.words;
       const entropyHex = route.params?.entropy;
       const hasEntropy = !!entropyHex;
@@ -193,12 +198,12 @@ const createAddWalletOptions = (theme: ReturnType<typeof useTheme>) =>
             entropy: undefined,
             providedEntropyBytes: undefined,
             words: undefined,
-            selectedWalletType: Chain.ONCHAIN,
+            selectedWalletType: entropyWalletType,
           });
         } else {
           const nextIndex = addWalletTypes.findIndex(item => item.id === id);
           if (nextIndex >= 0) {
-            navigation.setParams({ selectedIndex: nextIndex, selectedWalletType: Chain.ONCHAIN });
+            navigation.setParams({ selectedIndex: nextIndex, selectedWalletType: kindWalletType });
           }
         }
       };
@@ -212,12 +217,12 @@ const createAddWalletOptions = (theme: ReturnType<typeof useTheme>) =>
             id: walletType.id,
             text: walletType.text,
             subtitle: walletType.subtitle,
-            menuState: index === selectedIndex && selectedWalletType === Chain.ONCHAIN,
+            menuState: index === selectedIndex && selectedWalletType === kindWalletType,
           })),
         },
       ];
 
-      if (selectedWalletType === Chain.ONCHAIN) {
+      if (selectedWalletType === entropyWalletType) {
         actions.push({
           id: CommonToolTipActions.Entropy.id,
           text: entropyButtonText,

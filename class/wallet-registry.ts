@@ -70,6 +70,11 @@ export type TAddWalletOption = {
   };
   /** selecting it keeps the entropy the user provided. Otherwise the user is asked to drop it */
   keepsEntropy?: boolean;
+  /**
+   * The menu of the screen that chooses the kind of on-chain wallet (SegWit, Legacy, Taproot) applies to it:
+   * `selectedIndex` of the context. Otherwise choosing a kind in the menu selects the Bitcoin option.
+   */
+  usesKindMenu?: boolean;
   /** the screen asks for an LNDHub address when it is the selected one */
   asksLndHub?: boolean;
   /** default: always shown */
@@ -90,8 +95,8 @@ export function getAddWalletOptions(): TAddWalletOption[] {
 }
 
 /**
- * Gives the wallets a mnemonic may belong to, besides the ones the import knows.
- * The import keeps the ones that were used. When no wallet at all was used, they are offered next to a new wallet.
+ * Gives the wallets a mnemonic may belong to, besides the ones the import knows. The first is the default kind.
+ * The import keeps the ones that were used. When no wallet at all was used, the first is offered next to a new wallet.
  */
 export type TMnemonicImporter = (mnemonic: string, passphrase?: string) => TWallet[];
 

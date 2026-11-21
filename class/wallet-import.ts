@@ -377,7 +377,8 @@ const startImport = (
       // the wallets of the other wallet types this seed may belong to
       const unused: TWallet[] = [];
       for (const importer of getMnemonicImporters()) {
-        for (const wallet of importer(text, password)) {
+        const candidates = importer(text, password);
+        for (const wallet of candidates) {
           yield { progress: wallet.typeReadable };
           let used = false;
           try {
@@ -388,7 +389,7 @@ const startImport = (
           if (used) {
             yield { wallet };
             walletFound = true;
-          } else {
+          } else if (wallet === candidates[0]) {
             unused.push(wallet);
           }
         }

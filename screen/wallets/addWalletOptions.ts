@@ -142,6 +142,7 @@ registerAddWalletOption({
   testID: 'ActivateBitcoinButton',
   button: buttonDetails.Bitcoin,
   keepsEntropy: true,
+  usesKindMenu: true,
   create: createOnchainWallet,
 });
 
