@@ -62,6 +62,8 @@ export type AddWalletStackParamList = {
   };
   WalletsAddMultisig: {
     walletLabel: string;
+    /** `id` of the class of vault to create (the multisig wallets of the wallet registry). Undefined: Bitcoin's */
+    multisigId?: string;
   };
   MultisigAdvanced: {
     m: number;
@@ -74,6 +76,7 @@ export type AddWalletStackParamList = {
     n: number;
     walletLabel: string;
     format: string;
+    multisigId?: string;
     onBarScanned?: { data: string };
     sheetAction?: string;
     sheetImportText?: string;

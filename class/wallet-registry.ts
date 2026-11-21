@@ -142,3 +142,35 @@ export function registerWatchOnlyImporter(importer: TWatchOnlyImporter): void {
 export function getWatchOnlyImporters(): TWatchOnlyImporter[] {
   return watchOnlyImporters;
 }
+
+/**
+ * A class of multisig vault the app can create and import: Bitcoin's, or the one of another network.
+ */
+export type TMultisigWallet = {
+  /** names the class in the route params of the screens that create a vault */
+  id: string;
+  /** the vault class: MultisigHDWallet, or a class made of it. Its static PATH_* are the derivation paths of its vaults */
+  Wallet: any;
+  /** true when a setup file with this derivation path is of a vault of this class. Default: of no path */
+  ownsPath?: (path: string) => boolean;
+};
+
+const multisigWallets: TMultisigWallet[] = [];
+
+export function registerMultisigWallet(multisigWallet: TMultisigWallet): void {
+  multisigWallets.push(multisigWallet);
+}
+
+/**
+ * @param id undefined: the first registered, which is Bitcoin's
+ */
+export function getMultisigWallet(id?: string): TMultisigWallet {
+  return multisigWallets.find(multisigWallet => multisigWallet.id === id) ?? multisigWallets[0];
+}
+
+/**
+ * The class of vault a setup file is of, by the derivation paths in it. Bitcoin's when no other class owns one.
+ */
+export function getMultisigWalletOfPaths(paths: (string | undefined)[]): TMultisigWallet {
+  return multisigWallets.find(multisigWallet => paths.some(path => !!path && multisigWallet.ownsPath?.(path))) ?? multisigWallets[0];
+}

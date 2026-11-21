@@ -22,7 +22,7 @@ import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import bip39WalletFormatsElectrum from './bip39_wallet_formats.json' with {type: 'json'}; // https://github.com/spesmilo/electrum/blob/master/electrum/bip39_wallet_formats.json
 import bip39WalletFormatsBlueWallet from './bip39_wallet_formats_bluewallet.json' with {type: 'json'};
 import type { TWallet } from './wallets/types';
-import { getMnemonicImporters, getWatchOnlyImporters, getWifImporters } from './wallet-registry';
+import { getMnemonicImporters, getMultisigWalletOfPaths, getWatchOnlyImporters, getWifImporters } from './wallet-registry';
 import { errorMessage } from '../helpers/errorMessage';
 
 // Canonicalize a user-typed derivation path: trim, iOS smart quotes and h/H hardened notation
@@ -221,9 +221,16 @@ const startImport = (
 
     // is it multisig?
     yield { progress: 'multisignature' };
-    const ms = new MultisigHDWallet();
+    let ms = new MultisigHDWallet();
     ms.setSecret(text);
     if (ms.getN() > 0 && ms.getM() > 0) {
+      // the setup file of a vault of another network: read it as that vault
+      const paths = [ms.getDerivationPath(), ...Array.from({ length: ms.getN() }, (_, i) => ms.getCustomDerivationPathForCosigner(i + 1))];
+      const Multisig = getMultisigWalletOfPaths(paths).Wallet;
+      if (Multisig !== MultisigHDWallet) {
+        ms = new Multisig();
+        ms.setSecret(text);
+      }
       await fetch(ms, true, false);
       yield { wallet: ms };
     }

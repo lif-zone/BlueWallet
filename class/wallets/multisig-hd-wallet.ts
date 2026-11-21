@@ -19,7 +19,7 @@ import {
   uint8ArrayToString,
   compareUint8Arrays,
 } from '../../blue_modules/uint8array-extras';
-import { registerWalletType } from '../wallet-registry';
+import { registerMultisigWallet, registerWalletType } from '../wallet-registry';
 
 const ECPair = ECPairFactory(ecc);
 const bip32 = BIP32Factory(ecc);
@@ -138,7 +138,8 @@ export class MultisigHDWallet extends AbstractHDElectrumWallet {
    * Round-tripping through getSecret()/setSecret() re-runs BIP39 for every seed.
    */
   cloneCosigners(): MultisigHDWallet {
-    const clone = new MultisigHDWallet();
+    // a vault of the same class: the one of another network stays on its network
+    const clone = new (this.constructor as typeof MultisigHDWallet)();
     const label = this.getLabel();
     if (label) clone.setLabel(label);
     clone.setM(this.getM());
@@ -356,8 +357,10 @@ export class MultisigHDWallet extends AbstractHDElectrumWallet {
     if (this.isWrappedSegwit()) {
       const { address } = bitcoin.payments.p2sh({
         redeem: bitcoin.payments.p2wsh({
-          redeem: bitcoin.payments.p2ms({ m: this._m, pubkeys: MultisigHDWallet.sortBuffers(pubkeys) }),
+          redeem: bitcoin.payments.p2ms({ m: this._m, pubkeys: MultisigHDWallet.sortBuffers(pubkeys), network: this.network }),
+          network: this.network,
         }),
+        network: this.network,
       });
       if (!address) {
         throw new Error('Internal error: could not make p2sh address');
@@ -366,7 +369,8 @@ export class MultisigHDWallet extends AbstractHDElectrumWallet {
       return address;
     } else if (this.isNativeSegwit()) {
       const { address } = bitcoin.payments.p2wsh({
-        redeem: bitcoin.payments.p2ms({ m: this._m, pubkeys: MultisigHDWallet.sortBuffers(pubkeys) }),
+        redeem: bitcoin.payments.p2ms({ m: this._m, pubkeys: MultisigHDWallet.sortBuffers(pubkeys), network: this.network }),
+        network: this.network,
       });
       if (!address) {
         throw new Error('Internal error: could not make p2wsh address');
@@ -375,7 +379,8 @@ export class MultisigHDWallet extends AbstractHDElectrumWallet {
       return address;
     } else if (this.isLegacy()) {
       const { address } = bitcoin.payments.p2sh({
-        redeem: bitcoin.payments.p2ms({ m: this._m, pubkeys: MultisigHDWallet.sortBuffers(pubkeys) }),
+        redeem: bitcoin.payments.p2ms({ m: this._m, pubkeys: MultisigHDWallet.sortBuffers(pubkeys), network: this.network }),
+        network: this.network,
       });
       if (!address) {
         throw new Error('Internal error: could not make p2sh address');
@@ -1017,7 +1022,7 @@ export class MultisigHDWallet extends AbstractHDElectrumWallet {
     const { inputs, outputs, fee } = this.coinselect(utxos, targets, feeRate);
     sequence = sequence || AbstractHDElectrumWallet.defaultRBFSequence;
 
-    let psbt = new bitcoin.Psbt();
+    let psbt = this._newPsbt();
 
     let c = 0;
     inputs.forEach(input => {
@@ -1471,3 +1476,4 @@ export class MultisigHDWallet extends AbstractHDElectrumWallet {
 }
 
 registerWalletType({ type: MultisigHDWallet.type, load: json => MultisigHDWallet.fromJson(json) });
+registerMultisigWallet({ id: MultisigHDWallet.type, Wallet: MultisigHDWallet });
