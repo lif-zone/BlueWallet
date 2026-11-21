@@ -49,6 +49,7 @@ export class HDTaprootWallet extends AbstractHDElectrumWallet {
 
     const { address } = bitcoin.payments.p2tr({
       internalPubkey: xOnlyPubkey,
+      network: this.network,
     });
 
     if (!address) {
