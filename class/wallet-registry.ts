@@ -125,3 +125,20 @@ export function registerWifImporter(importer: TWifImporter): void {
 export function getWifImporters(): TWifImporter[] {
   return wifImporters;
 }
+
+/**
+ * Gives the watch-only wallets an address or an extended public key may belong to, besides the ones the import knows.
+ * As a mnemonic importer: the first is the default kind, and the import keeps the ones that were used.
+ * An empty list when the text is not one of its network.
+ */
+export type TWatchOnlyImporter = (text: string) => TWallet[];
+
+const watchOnlyImporters: TWatchOnlyImporter[] = [];
+
+export function registerWatchOnlyImporter(importer: TWatchOnlyImporter): void {
+  watchOnlyImporters.push(importer);
+}
+
+export function getWatchOnlyImporters(): TWatchOnlyImporter[] {
+  return watchOnlyImporters;
+}

@@ -61,11 +61,24 @@ export class WatchOnlyWallet extends LegacyWallet {
     throw new Error('Not initialized');
   }
 
+  /**
+   * The HD wallet classes that do the work of an HD watch-only wallet, by kind of address.
+   * A wallet of another network overrides it.
+   */
+  _hdWalletClasses(): Record<'p2tr' | 'p2wpkh' | 'p2sh(p2wpkh)' | 'p2pkh', new () => THDWalletForWatchOnly> {
+    return {
+      p2tr: HDTaprootWallet,
+      p2wpkh: HDSegwitBech32Wallet,
+      'p2sh(p2wpkh)': HDSegwitP2SHWallet,
+      p2pkh: HDLegacyP2PKHWallet,
+    };
+  }
+
   valid() {
-    if (this.secret.startsWith('xpub') || this.secret.startsWith('ypub') || this.secret.startsWith('zpub')) return this.isXpubValid();
+    if (this.isHd()) return this.isXpubValid();
 
     try {
-      bitcoin.address.toOutputScript(this.getAddress());
+      bitcoin.address.toOutputScript(this.getAddress(), this.network);
       return true;
     } catch (_) {
       return false;
@@ -79,31 +92,34 @@ export class WatchOnlyWallet extends LegacyWallet {
    */
   init() {
     let hdWalletInstance: THDWalletForWatchOnly;
+    const classes = this._hdWalletClasses();
 
     // Check script type first (most reliable - parsed from descriptor)
     if (this.segwitType === 'p2tr') {
-      hdWalletInstance = new HDTaprootWallet();
+      hdWalletInstance = new classes.p2tr();
     } else if (this.segwitType === 'p2wpkh') {
-      hdWalletInstance = new HDSegwitBech32Wallet();
+      hdWalletInstance = new classes.p2wpkh();
     } else if (this.segwitType === 'p2sh(p2wpkh)') {
-      hdWalletInstance = new HDSegwitP2SHWallet();
+      hdWalletInstance = new classes['p2sh(p2wpkh)']();
     } else if (this.segwitType === 'p2pkh') {
-      hdWalletInstance = new HDLegacyP2PKHWallet();
+      hdWalletInstance = new classes.p2pkh();
     }
     // Fallback to path-based detection (for bare [fingerprint/path]xpub without descriptor wrapper)
     else if (this._derivationPath?.startsWith("m/86'")) {
       // if path is explicit taproot path - its definately BIP86
-      hdWalletInstance = new HDTaprootWallet();
+      hdWalletInstance = new classes.p2tr();
     } else if (this._derivationPath?.startsWith("m/84'")) {
-      hdWalletInstance = new HDSegwitBech32Wallet();
+      hdWalletInstance = new classes.p2wpkh();
     } else if (this._derivationPath?.startsWith("m/49'")) {
-      hdWalletInstance = new HDSegwitP2SHWallet();
+      hdWalletInstance = new classes['p2sh(p2wpkh)']();
     }
     // Final fallback to xpub prefix (legacy behavior for bare xpub/ypub/zpub)
     else if (this.secret.startsWith('xpub')) {
-      hdWalletInstance = new HDLegacyP2PKHWallet();
-    } else if (this.secret.startsWith('ypub')) hdWalletInstance = new HDSegwitP2SHWallet();
-    else if (this.secret.startsWith('zpub')) hdWalletInstance = new HDSegwitBech32Wallet();
+      hdWalletInstance = new classes.p2pkh();
+    } else if (this.secret.startsWith('ypub')) hdWalletInstance = new classes['p2sh(p2wpkh)']();
+    else if (this.secret.startsWith('zpub')) hdWalletInstance = new classes.p2wpkh();
+    // an extended public key with the prefix of another network
+    else if (this.isHd()) hdWalletInstance = new classes.p2wpkh();
     else return this;
     hdWalletInstance._xpub = this.secret;
 
@@ -270,7 +286,7 @@ export class WatchOnlyWallet extends LegacyWallet {
       throw new Error('Not initialized');
     }
 
-    if (address && address.startsWith('BC1')) address = address.toLowerCase();
+    if (address && address.toLowerCase().startsWith(this.bech32Prefix)) address = address.toLowerCase();
 
     return this.getAddress() === address;
   }
@@ -303,8 +319,11 @@ export class WatchOnlyWallet extends LegacyWallet {
         xpub = this._zpubToXpub(this.secret);
       } else if (this.secret.startsWith('ypub')) {
         xpub = AbstractWallet._ypubToXpub(this.secret);
-      } else {
+      } else if (this.secret.startsWith('xpub')) {
         xpub = this.secret;
+      } else {
+        // the prefix of another network
+        xpub = this._zpubToXpub(this.secret);
       }
 
       const hdNode = bip32.fromBase58(xpub);

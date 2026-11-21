@@ -22,7 +22,7 @@ import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import bip39WalletFormatsElectrum from './bip39_wallet_formats.json' with {type: 'json'}; // https://github.com/spesmilo/electrum/blob/master/electrum/bip39_wallet_formats.json
 import bip39WalletFormatsBlueWallet from './bip39_wallet_formats_bluewallet.json' with {type: 'json'};
 import type { TWallet } from './wallets/types';
-import { getMnemonicImporters, getWifImporters } from './wallet-registry';
+import { getMnemonicImporters, getWatchOnlyImporters, getWifImporters } from './wallet-registry';
 import { errorMessage } from '../helpers/errorMessage';
 
 // Canonicalize a user-typed derivation path: trim, iOS smart quotes and h/H hardened notation
@@ -498,7 +498,8 @@ const startImport = (
 
     // check if text is in hex or base64 format
     const isHexKey = /^[0-9a-fA-F]{64}$/.test(text);
-    const isBase64Key = /^[A-Za-z0-9+/=]{43,44}$/.test(text);
+    // an address of another wallet type may look as a key in base64: its an address
+    const isBase64Key = /^[A-Za-z0-9+/=]{43,44}$/.test(text) && !getWatchOnlyImporters().some(importer => importer(text).length > 0);
 
     let rawKeyBuffer;
     let privateKey;
@@ -581,6 +582,8 @@ const startImport = (
     yield { progress: 'watch only' };
     const wo1 = new WatchOnlyWallet();
     wo1.setSecret(text);
+    // an address or key that was used: no wallet of another wallet type is suggested for it
+    let watchOnlyUsed = false;
     if (wo1.valid()) {
       wo1.init();
       if (text.startsWith('xpub')) {
@@ -600,9 +603,42 @@ const startImport = (
           await fetch(wo1, true);
           yield { wallet: wo1 };
         }
+        watchOnlyUsed = found;
       } else {
         await fetch(wo1, true);
         yield { wallet: wo1 };
+        try {
+          watchOnlyUsed = await wasUsed(wo1);
+        } catch (e) {
+          console.log('[wallet-import]', wo1.typeReadable, 'check failed:', errorMessage(e));
+        }
+      }
+    }
+
+    // the watch-only wallets of the other wallet types this address or key may belong to
+    const unusedWatchOnly: TWallet[] = [];
+    for (const importer of getWatchOnlyImporters()) {
+      const candidates = importer(text);
+      for (const wallet of candidates) {
+        yield { progress: wallet.typeReadable };
+        let used = false;
+        try {
+          used = await wasUsed(wallet);
+          if (used) await fetch(wallet, true);
+        } catch (e) {
+          console.log('[wallet-import]', wallet.typeReadable, 'check failed:', errorMessage(e));
+        }
+        if (used) {
+          yield { wallet };
+          watchOnlyUsed = true;
+        } else if (wallet === candidates[0]) {
+          unusedWatchOnly.push(wallet);
+        }
+      }
+    }
+    if (!watchOnlyUsed) {
+      for (const wallet of unusedWatchOnly) {
+        yield { wallet };
       }
     }
 
