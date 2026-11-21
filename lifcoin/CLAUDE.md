@@ -91,6 +91,11 @@ git push
   variant of a BlueWallet wallet class. A new LIF wallet kind: make it
   there, never copy a wallet class. The base class must use `this.network`
   and `this.electrum` (fix it in anycoin).
+- `wallet.type` of a LIF wallet is the type of its base class
+  (`HDsegwitBech32`, `watchOnly`...): the app has many
+  `wallet.type===X.type` tests. It is saved as `opt.type` (`HDlif`...),
+  the static `type` of the LIF class: `getSavedType()`. To tell a LIF
+  wallet: `wallet.coin`, never `wallet.type`.
 - `lifcoin/hd_lif_wallet.ts`: the HD kinds. `HDlif` (BIP84, default),
   `HDlifLegacy`, `HDlifP2SH`, `HDlifTaproot`.
 - `lifcoin/key_lif_wallet.ts`: the single-address kinds (one WIF), made by

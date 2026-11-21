@@ -17,9 +17,13 @@
     for LIF. Taproot: cosignPsbt does not finalize (same on Bitcoin).
   - Import of a private key with a script prefix (p2wpkh:WIF): Bitcoin
     only.
-  - Multisig vault: creation screens, cosigner import, and the PSBT screen
-    (screen/send/psbtMultisig.tsx: addresses, fiat and "BTC" fee text assume
-    Bitcoin).
+  - Multisig vault. Class (multisig-hd-wallet.ts): address network in 3
+    places, new bitcoin.Psbt() -> this._newPsbt(), paths m/48'/1842'/0'/2'
+    (statics PATH_*, setDerivationPath). Creation: addMultisigStep2.tsx and
+    multisig-cosigner.ts name MultisigHDWallet: take the class from a route
+    param. Import of a setup file: tell LIF by the coin type of the path.
+    Screens: psbtMultisig.tsx (addresses, fiat and "BTC" fee text assume
+    Bitcoin), ViewEditMultisigCosigners.tsx (new MultisigHDWallet()).
   - Other seed formats: Electrum seed, SLIP39, aezeed.
 - The LIF kinds other than HDlif (HD and single-address: Legacy, P2SH,
   Taproot, single-address SegWit): a real send on the LIF network was not
