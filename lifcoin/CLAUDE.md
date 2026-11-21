@@ -101,6 +101,10 @@ git push
 - `lifcoin/key_lif_wallet.ts`: the single-address kinds (one WIF), made by
   Import Wallet only.
 - `lifcoin/watch_lif_wallet.ts`: watch-only, of an address or an Lpub.
+- `lifcoin/multisig_lif_wallet.ts`: multisig vault. Paths
+  `m/48'/1842'/0'/2'` (and `/1'`, `m/45'/1842'`): the coin type tells a LIF
+  setup file from a Bitcoin one. Cosigner keys are written as on Bitcoin
+  (xpub, Ypub, Zpub).
 - Every LIF HD kind shows its extended public key as `Lpub`. An Lpub does
   not say the kind of address: the import checks the four kinds.
 - `lifcoin/index.ts` registers all kinds and their importers.

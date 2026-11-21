@@ -1,7 +1,8 @@
 // The LIF coin in the app: its wallet type, its option on the Add Wallet
 // screen, and its wallet in Import Wallet. Imported by class/wallet-types.ts.
 import {registerWalletType, registerAddWalletOption,
-  registerMnemonicImporter, registerWifImporter, registerWatchOnlyImporter}
+  registerMnemonicImporter, registerWifImporter, registerWatchOnlyImporter,
+  registerMultisigWallet}
   from '../class/wallet-registry.ts';
 import triggerHapticFeedback, {HapticFeedbackTypes}
   from '../blue_modules/hapticFeedback.ts';
@@ -12,6 +13,7 @@ import {HDLifWallet, HDLifLegacyWallet, HDLifTaprootWallet,
 import {key_lif_wallets} from './key_lif_wallet.ts';
 import {LifWatchOnlyWallet, lif_watch_only_wallets}
   from './watch_lif_wallet.ts';
+import {LifMultisigWallet} from './multisig_lif_wallet.ts';
 
 for (let LifWallet of [...hd_lif_wallets, ...key_lif_wallets]){
   registerWalletType({
@@ -93,3 +95,36 @@ registerWalletType({
 // Import Wallet: an address or an extended public key may be of a LIF
 // watch-only wallet
 registerWatchOnlyImporter(lif_watch_only_wallets);
+
+// Multisig vault: its own option on the Add Wallet screen, which opens the
+// screens that create a vault. Import Wallet tells a LIF vault by its path.
+registerWalletType({
+  type: LifMultisigWallet.type,
+  load: json=>LifMultisigWallet.fromJson(json),
+});
+
+registerMultisigWallet({
+  id: LifMultisigWallet.type,
+  Wallet: LifMultisigWallet,
+  ownsPath: LifMultisigWallet.owns_path,
+});
+
+registerAddWalletOption({
+  id: 'LIF_VAULT',
+  // after the Bitcoin vault
+  order: 25,
+  testID: 'ActivateLifVaultButton',
+  button: {
+    image: {uri: import.meta.resolve('./lifcoin.png')},
+    title: 'Lifcoin Vault',
+    explain: 'LIF multisig vault, for large amounts',
+    borderColorActive: 'foregroundColor',
+  },
+  create: ({label, setIsLoading, navigate})=>{
+    setIsLoading(false);
+    navigate('WalletsAddMultisig', {
+      walletLabel: label.trim()||'LIF '+loc.multisig.default_label,
+      multisigId: LifMultisigWallet.type,
+    });
+  },
+});
