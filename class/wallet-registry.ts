@@ -174,3 +174,20 @@ export function getMultisigWallet(id?: string): TMultisigWallet {
 export function getMultisigWalletOfPaths(paths: (string | undefined)[]): TMultisigWallet {
   return multisigWallets.find(multisigWallet => paths.some(path => !!path && multisigWallet.ownsPath?.(path))) ?? multisigWallets[0];
 }
+
+/**
+ * Gives the wallets a seed of another format than BIP39 (an Electrum seed, SLIP39 shares) may belong to, besides the
+ * ones the import knows. Only the wallets the text is valid for; the first is the default kind.
+ * The import keeps the ones that were used, or the first when none was.
+ */
+export type TSeedImporter = (text: string, passphrase?: string) => TWallet[] | Promise<TWallet[]>;
+
+const seedImporters: TSeedImporter[] = [];
+
+export function registerSeedImporter(importer: TSeedImporter): void {
+  seedImporters.push(importer);
+}
+
+export function getSeedImporters(): TSeedImporter[] {
+  return seedImporters;
+}

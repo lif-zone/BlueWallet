@@ -63,6 +63,7 @@ export class HDSegwitElectrumSeedP2WPKHWallet extends HDSegwitBech32Wallet {
     const node = bip32.fromBase58(xpub);
     const address = bitcoin.payments.p2wpkh({
       pubkey: node.derive(1).derive(index).publicKey,
+      network: this.network,
     }).address;
     if (!address) {
       throw new Error('Internal error: no address in _getInternalAddressByIndex');
@@ -79,6 +80,7 @@ export class HDSegwitElectrumSeedP2WPKHWallet extends HDSegwitBech32Wallet {
     const node = bip32.fromBase58(xpub);
     const address = bitcoin.payments.p2wpkh({
       pubkey: node.derive(0).derive(index).publicKey,
+      network: this.network,
     }).address;
     if (!address) {
       throw new Error('Internal error: no address in _getExternalAddressByIndex');

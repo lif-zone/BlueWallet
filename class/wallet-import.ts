@@ -22,7 +22,7 @@ import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import bip39WalletFormatsElectrum from './bip39_wallet_formats.json' with {type: 'json'}; // https://github.com/spesmilo/electrum/blob/master/electrum/bip39_wallet_formats.json
 import bip39WalletFormatsBlueWallet from './bip39_wallet_formats_bluewallet.json' with {type: 'json'};
 import type { TWallet } from './wallets/types';
-import { getMnemonicImporters, getMultisigWalletOfPaths, getWatchOnlyImporters, getWifImporters } from './wallet-registry';
+import { getMnemonicImporters, getMultisigWalletOfPaths, getSeedImporters, getWatchOnlyImporters, getWifImporters } from './wallet-registry';
 import { errorMessage } from '../helpers/errorMessage';
 
 // Canonicalize a user-typed derivation path: trim, iOS smart quotes and h/H hardened notation
@@ -713,6 +713,28 @@ const startImport = (
         s3.setPassphrase(password);
       }
       yield { wallet: s3 };
+    }
+
+    // the wallets of the other wallet types a seed of these formats may belong to
+    for (const importer of getSeedImporters()) {
+      const candidates = await importer(text, password);
+      let found = false;
+      for (const wallet of candidates) {
+        yield { progress: wallet.typeReadable };
+        let used = false;
+        try {
+          used = await wasUsed(wallet);
+        } catch (e) {
+          console.log('[wallet-import]', wallet.typeReadable, 'check failed:', errorMessage(e));
+        }
+        if (used) {
+          yield { wallet };
+          found = true;
+        }
+      }
+      if (!found && candidates.length > 0) {
+        yield { wallet: candidates[0] };
+      }
     }
 
     // is it BC-UR payload with multiple accounts?
