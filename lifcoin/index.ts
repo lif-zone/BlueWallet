@@ -6,12 +6,19 @@ import triggerHapticFeedback, {HapticFeedbackTypes}
   from '../blue_modules/hapticFeedback.ts';
 import loc from '../loc/index.ts';
 import presentAlert from '../components/Alert.ts';
-import {HDLifWallet} from './hd_lif_wallet.ts';
+import {HDLifWallet, HDLifLegacyWallet, HDLifTaprootWallet,
+  hd_lif_wallets} from './hd_lif_wallet.ts';
 
-registerWalletType({
-  type: HDLifWallet.type,
-  load: json=>HDLifWallet.fromJson(json),
-});
+for (let LifWallet of hd_lif_wallets){
+  registerWalletType({
+    type: LifWallet.type,
+    load: json=>LifWallet.fromJson(json),
+  });
+}
+
+// the kinds of wallet of the menu of the Add Wallet screen, by its order:
+// Native SegWit, Legacy, Taproot
+const add_wallet_kinds = [HDLifWallet, HDLifLegacyWallet, HDLifTaprootWallet];
 
 registerAddWalletOption({
   id: 'LIF',
@@ -26,8 +33,12 @@ registerAddWalletOption({
   },
   // entropy the user provided (dice rolls) is mixed into the new wallet
   keepsEntropy: true,
-  create: async({label, entropy, addWallet, saveToDisk, navigate})=>{
-    let wallet = new HDLifWallet();
+  usesKindMenu: true,
+  create: async({label, entropy, selectedIndex, addWallet, saveToDisk,
+    navigate})=>
+  {
+    let LifWallet = add_wallet_kinds[selectedIndex]||HDLifWallet;
+    let wallet = new LifWallet();
     wallet.setLabel(label||loc.wallets.details_title);
     if (entropy){
       try {
@@ -48,10 +59,11 @@ registerAddWalletOption({
 });
 
 // Import Wallet: a mnemonic may be of a LIF wallet
-registerMnemonicImporter((mnemonic, passphrase)=>{
-  let wallet = new HDLifWallet();
-  wallet.setSecret(mnemonic);
-  if (passphrase)
-    wallet.setPassphrase(passphrase);
-  return [wallet];
-});
+registerMnemonicImporter((mnemonic, passphrase)=>hd_lif_wallets.map(
+  LifWallet=>{
+    let wallet = new LifWallet();
+    wallet.setSecret(mnemonic);
+    if (passphrase)
+      wallet.setPassphrase(passphrase);
+    return wallet;
+  }));

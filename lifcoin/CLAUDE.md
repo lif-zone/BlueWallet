@@ -86,8 +86,14 @@ git push
 - Verbose transactions are built from the hex: the node gives few fields.
 - No `blockchain.scripthash.get_mempool`: mempool comes from the history.
 - One fee rate, about 5000 sat/vbyte. Caches in memory only.
-- `lifcoin/network.ts`: bech32 `lif`, path `m/84'/1842'/0'`.
-  `lifcoin/index.ts` registers `HDLifWallet`.
+- `lifcoin/network.ts`: bech32 `lif`, coin type 1842.
+- `lifcoin/lif_wallet.ts`: `lif_wallet_class(Base, opt)` makes the LIF
+  variant of a BlueWallet wallet class. A new LIF wallet kind: make it
+  there, never copy a wallet class. The base class must use `this.network`
+  and `this.electrum` (fix it in anycoin).
+- `lifcoin/hd_lif_wallet.ts`: the HD kinds. `HDlif` (BIP84, default),
+  `HDlifLegacy`, `HDlifP2SH`, `HDlifTaproot`. `lifcoin/index.ts` registers
+  them.
 - `lifcoin/price.ts`: LIF price in USD, fetched every 10 minutes. 0.01
   until the first answer.
 

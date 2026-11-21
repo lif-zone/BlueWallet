@@ -1,14 +1,14 @@
-// HD wallet (BIP39 mnemonic, BIP84 native segwit) on the LIF network.
-// BlueWallet's HD SegWit wallet, with the LIF network, path and Electrum
-// client.
+// HD wallets (BIP39 mnemonic) on the LIF network: BlueWallet's HD wallets,
+// with the LIF network, paths and Electrum client.
 import b58 from 'bs58check';
 import {HDSegwitBech32Wallet}
   from '../class/wallets/hd-segwit-bech32-wallet.ts';
-import type {TWalletElectrum} from '../class/wallets/legacy-wallet.ts';
-import {lif_network, lif_coin, LIF_COIN_TYPE, LIF_MAX_FEE_RATE}
-  from './network.ts';
-import * as lif_electrum from './electrum.ts';
-import {lif_price_update} from './price.ts';
+import {HDLegacyP2PKHWallet}
+  from '../class/wallets/hd-legacy-p2pkh-wallet.ts';
+import {HDSegwitP2SHWallet} from '../class/wallets/hd-segwit-p2sh-wallet.ts';
+import {HDTaprootWallet} from '../class/wallets/hd-taproot-wallet.ts';
+import {lif_network, LIF_COIN_TYPE} from './network.ts';
+import {lif_wallet_class} from './lif_wallet.ts';
 
 const XPUB_VERSION = 0x0488b21e;
 
@@ -21,35 +21,12 @@ function xpub_version_set(xpub: string, version: number): string {
   return b58.encode(res);
 }
 
-export class HDLifWallet extends HDSegwitBech32Wallet {
-  static readonly type = 'HDlif';
-  static readonly typeReadable = 'LIF HD SegWit (BIP84)';
-  // @ts-ignore: override
-  public readonly type = HDLifWallet.type;
-  // @ts-ignore: override
-  public readonly typeReadable = HDLifWallet.typeReadable;
-  static readonly derivationPath = `m/84'/${LIF_COIN_TYPE}'/0'`;
-
-  get electrum(): TWalletElectrum {
-    return lif_electrum as unknown as TWalletElectrum;
-  }
-
-  get network(){
-    return lif_network;
-  }
-
-  get coin(){
-    // keeps the price fresh, while LIF amounts are shown
-    lif_price_update();
-    return lif_coin;
-  }
-
-  _newPsbt(){
-    let psbt = super._newPsbt();
-    psbt.setMaximumFeeRate(LIF_MAX_FEE_RATE);
-    return psbt;
-  }
-
+// Native SegWit (BIP84), lif1q... addresses: the default LIF wallet
+export class HDLifWallet extends lif_wallet_class(HDSegwitBech32Wallet, {
+  type: 'HDlif',
+  typeReadable: 'LIF HD SegWit (BIP84)',
+  derivationPath: `m/84'/${LIF_COIN_TYPE}'/0'`,
+}){
   // the base class keeps its extended public key as a zpub: here its an
   // Lpub
   _xpubToZpub(xpub: string): string {
@@ -59,31 +36,29 @@ export class HDLifWallet extends HDSegwitBech32Wallet {
   _zpubToXpub(lpub: string): string {
     return xpub_version_set(lpub, XPUB_VERSION);
   }
-
-  // An address of the older kinds (1..., 3...) is written the same on
-  // Bitcoin and on LIF: one copied from a Bitcoin wallet would be paid by
-  // mistake. Its accepted, after the user confirms.
-  addressWarning(address: string): string|undefined {
-    if (address.trim().toLowerCase().startsWith(this.bech32Prefix))
-      return;
-    if (!this.isAddressValid(address))
-      return;
-    return 'This is not a lif1 address. Addresses of this kind are written '
-      +'the same on Bitcoin and on LIF. Send only if you know that it is a '
-      +'LIF address: if it is a Bitcoin address, the owner may not be able '
-      +'to reach these coins. Send to this address?';
-  }
-
-  // Bitcoin only
-  allowBIP47(){
-    return false;
-  }
-
-  allowSilentPaymentSend(): boolean {
-    return false;
-  }
-
-  allowPayJoin(){
-    return false;
-  }
 }
+
+// Legacy (BIP44), 1... addresses
+export class HDLifLegacyWallet extends lif_wallet_class(HDLegacyP2PKHWallet, {
+  type: 'HDlifLegacy',
+  typeReadable: 'LIF HD Legacy (BIP44 P2PKH)',
+  derivationPath: `m/44'/${LIF_COIN_TYPE}'/0'`,
+}){}
+
+// SegWit wrapped in P2SH (BIP49), 3... addresses
+export class HDLifP2SHWallet extends lif_wallet_class(HDSegwitP2SHWallet, {
+  type: 'HDlifP2SH',
+  typeReadable: 'LIF HD SegWit (BIP49 P2SH)',
+  derivationPath: `m/49'/${LIF_COIN_TYPE}'/0'`,
+}){}
+
+// Taproot (BIP86), lif1p... addresses
+export class HDLifTaprootWallet extends lif_wallet_class(HDTaprootWallet, {
+  type: 'HDlifTaproot',
+  typeReadable: 'LIF HD Taproot (BIP86)',
+  derivationPath: `m/86'/${LIF_COIN_TYPE}'/0'`,
+}){}
+
+// the kinds of LIF HD wallet. The first is the default
+export const hd_lif_wallets = [HDLifWallet, HDLifLegacyWallet,
+  HDLifP2SHWallet, HDLifTaprootWallet];

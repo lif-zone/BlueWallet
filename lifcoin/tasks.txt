@@ -5,3 +5,17 @@
 
 - Add Wallet: the texts of the Lifcoin option ("Lifcoin", "LIF wallet, on
   the LIF network") are not translated: English in every language.
+- LIF wallet kinds still missing (Bitcoin has them). Each needs its base
+  class to use this.network / this.electrum (anycoin), a LIF variant
+  (lif_wallet_class) and its way in:
+  - Import: single private key (WIF), single address. A WIF, a 1.../3...
+    address and an xpub are written the same on Bitcoin and LIF: the import
+    must check both networks.
+  - Watch-only wallet (Lpub / xpub, address).
+  - Multisig vault: creation screens, cosigner import, and the PSBT screen
+    (screen/send/psbtMultisig.tsx: addresses, fiat and "BTC" fee text assume
+    Bitcoin).
+  - Other seed formats: Electrum seed, SLIP39, aezeed.
+- HDlifLegacy, HDlifP2SH, HDlifTaproot: a real send on the LIF network was
+  not done yet (signing was tested with a fake coin). Their extended public
+  key is shown as xpub/ypub, not Lpub.
