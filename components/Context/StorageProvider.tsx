@@ -275,84 +275,91 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       console.debug('[refreshAllWalletTransactions] Starting refresh');
       refreshingRef.current = true;
 
-      let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
-
       try {
         if (showUpdateStatusIndicator) {
           console.debug('[refreshAllWalletTransactions] Setting wallet transaction status to ALL');
           setWalletTransactionUpdateStatus(WalletTransactionsStatus.ALL);
         }
         console.debug('[refreshAllWalletTransactions] Waiting for connectivity...');
-        // `ensureConnected()` ping-checks the existing socket and, only if needed,
-        // tears it down and reconnects. Replaces the old wait+ping+wait pattern
-        // which surfaced false "network error" alerts after iOS suspend/resume.
-        // one Electrum client for each network that has a wallet: the wallets of a network that cannot be
-        // reached are skipped, and the others are refreshed
+        // one Electrum client for each network that has a wallet. Each network is refreshed on its own, all at
+        // the same time: a network that is slow to connect, or cannot be reached, does not hold the others
         const electrums = BlueApp.getElectrums(lastSnappedTo);
         if (electrums.length === 0) electrums.push(BlueElectrum);
-        const reached = await Promise.all(electrums.map(electrum => electrum.ensureConnected()));
-        const connected = electrums.filter((_electrum, i) => reached[i]);
-        if (connected.length === 0) {
-          console.log('[refreshAllWalletTransactions] could not establish Electrum connection, aborting refresh');
-          return;
-        }
 
-        console.debug('[refreshAllWalletTransactions] Connected to Electrum');
+        const refreshNetwork = async (electrum: (typeof electrums)[number]) => {
+          let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
+          try {
+            // `ensureConnected()` ping-checks the existing socket and, only if needed,
+            // tears it down and reconnects. Replaces the old wait+ping+wait pattern
+            // which surfaced false "network error" alerts after iOS suspend/resume.
+            if (!(await electrum.ensureConnected())) {
+              console.log('[refreshAllWalletTransactions] could not establish Electrum connection, aborting refresh');
+              return;
+            }
+            const connected = [electrum];
 
-        // Race only the post-connect work. We budget ample time so that a slow
-        // initial Electrum connection (cold start, slow TLS, flaky network) doesn't
-        // cause the fetch race to abort prematurely.
-        const REFRESH_FETCH_PHASE_TIMEOUT_MS = Math.max(120_000, BlueElectrum.ENSURE_CONNECTED_MAX_WALL_MS * 2);
-        const timeoutPromise = new Promise<never>(
-          (_resolve, reject) =>
-            (refreshTimeout = setTimeout(() => {
-              console.debug('[refreshAllWalletTransactions] Timeout reached');
-              reject(new Error('Timeout reached'));
-            }, REFRESH_FETCH_PHASE_TIMEOUT_MS)),
-        );
+            console.debug('[refreshAllWalletTransactions] Connected to Electrum');
 
-        if (typeof BlueApp.fetchSenderPaymentCodes !== 'function') {
-          console.warn('[refreshAllWalletTransactions] fetchSenderPaymentCodes is not available');
-        }
+            // Race only the post-connect work. We budget ample time so that a slow
+            // initial Electrum connection (cold start, slow TLS, flaky network) doesn't
+            // cause the fetch race to abort prematurely.
+            const REFRESH_FETCH_PHASE_TIMEOUT_MS = Math.max(120_000, BlueElectrum.ENSURE_CONNECTED_MAX_WALL_MS * 2);
+            const timeoutPromise = new Promise<never>(
+              (_resolve, reject) =>
+                (refreshTimeout = setTimeout(() => {
+                  console.debug('[refreshAllWalletTransactions] Timeout reached');
+                  reject(new Error('Timeout reached'));
+                }, REFRESH_FETCH_PHASE_TIMEOUT_MS)),
+            );
 
-        const paymentCodesPromise =
-          typeof BlueApp.fetchSenderPaymentCodes === 'function'
-            ? (async () => {
-                const codesStart = Date.now();
-                console.debug('[refreshAllWalletTransactions] Fetching sender payment codes (parallel)');
-                await BlueApp.fetchSenderPaymentCodes(lastSnappedTo, connected);
-                console.debug('[refreshAllWalletTransactions] fetch payment codes took', (Date.now() - codesStart) / 1000, 'sec');
-              })()
-            : Promise.resolve();
+            if (typeof BlueApp.fetchSenderPaymentCodes !== 'function') {
+              console.warn('[refreshAllWalletTransactions] fetchSenderPaymentCodes is not available');
+            }
 
-        console.debug('[refreshAllWalletTransactions] Fetching wallet balances and transactions');
-        await Promise.race([
-          (async () => {
-            await Promise.all([
-              paymentCodesPromise,
+            const paymentCodesPromise =
+              typeof BlueApp.fetchSenderPaymentCodes === 'function'
+                ? (async () => {
+                    const codesStart = Date.now();
+                    console.debug('[refreshAllWalletTransactions] Fetching sender payment codes (parallel)');
+                    await BlueApp.fetchSenderPaymentCodes(lastSnappedTo, connected);
+                    console.debug('[refreshAllWalletTransactions] fetch payment codes took', (Date.now() - codesStart) / 1000, 'sec');
+                  })()
+                : Promise.resolve();
+
+            console.debug('[refreshAllWalletTransactions] Fetching wallet balances and transactions');
+            await Promise.race([
               (async () => {
-                const balanceStart = Date.now();
-                await BlueApp.fetchWalletBalances(lastSnappedTo, connected);
-                console.debug('[refreshAllWalletTransactions] fetch balance took', (Date.now() - balanceStart) / 1000, 'sec');
+                await Promise.all([
+                  paymentCodesPromise,
+                  (async () => {
+                    const balanceStart = Date.now();
+                    await BlueApp.fetchWalletBalances(lastSnappedTo, connected);
+                    console.debug('[refreshAllWalletTransactions] fetch balance took', (Date.now() - balanceStart) / 1000, 'sec');
 
-                const txStart = Date.now();
-                await BlueApp.fetchWalletTransactions(lastSnappedTo, connected);
-                console.debug('[refreshAllWalletTransactions] fetch tx took', (Date.now() - txStart) / 1000, 'sec');
+                    const txStart = Date.now();
+                    await BlueApp.fetchWalletTransactions(lastSnappedTo, connected);
+                    console.debug('[refreshAllWalletTransactions] fetch tx took', (Date.now() - txStart) / 1000, 'sec');
+                  })(),
+                ]);
+
+                console.debug('[refreshAllWalletTransactions] Saving data to disk');
+                await saveToDisk();
               })(),
+              timeoutPromise,
             ]);
-
-            console.debug('[refreshAllWalletTransactions] Saving data to disk');
-            await saveToDisk();
-          })(),
-          timeoutPromise,
-        ]);
-        console.debug('[refreshAllWalletTransactions] Refresh completed successfully');
+            console.debug('[refreshAllWalletTransactions] Refresh completed successfully');
+          } catch (error) {
+            console.error('[refreshAllWalletTransactions] Error:', error);
+          } finally {
+            if (refreshTimeout !== undefined) {
+              clearTimeout(refreshTimeout);
+            }
+          }
+        };
+        await Promise.all(electrums.map(refreshNetwork));
       } catch (error) {
         console.error('[refreshAllWalletTransactions] Error:', error);
       } finally {
-        if (refreshTimeout !== undefined) {
-          clearTimeout(refreshTimeout);
-        }
         console.debug('[refreshAllWalletTransactions] Resetting wallet transaction status and refresh lock');
         refreshingRef.current = false;
         setWalletTransactionUpdateStatus(WalletTransactionsStatus.NONE);
