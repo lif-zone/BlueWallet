@@ -6,7 +6,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import assert from 'assert';
 
-import { satoshiToBTC, satoshiToLocalCurrency } from '../../blue_modules/currency';
+import { coinHasFiat, satoshiToBTC, satoshiToLocalCurrency } from '../../blue_modules/currency';
 import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
 import BlueText from '../../components/BlueText';
 import presentAlert from '../../components/Alert';
@@ -33,11 +33,13 @@ type DestinationTarget = { address?: string; value: number; script?: { hex: stri
 
 const normalizeAddress = (address: string) => address.trim().toLowerCase();
 
-const resolveOutputAddress = (output: bitcoin.Psbt['txOutputs'][number]): string | undefined => {
-  if (output.address) return output.address;
+// the PSBT is parsed without a network, so `output.address` would be the one of Bitcoin: on another network
+// the address is made of the script
+const resolveOutputAddress = (output: bitcoin.Psbt['txOutputs'][number], network: bitcoin.Network): string | undefined => {
+  if (output.address && network === bitcoin.networks.bitcoin) return output.address;
   if (!output.script) return undefined;
   try {
-    return bitcoin.address.fromOutputScript(output.script);
+    return bitcoin.address.fromOutputScript(output.script, network);
   } catch {
     return undefined;
   }
@@ -65,7 +67,7 @@ export const getDestinationData = (psbt: bitcoin.Psbt, wallet: MultisigHDWallet,
   let totalSat = 0;
   const targets: DestinationTarget[] = [];
   for (const output of psbt.txOutputs) {
-    const address = resolveOutputAddress(output);
+    const address = resolveOutputAddress(output, wallet.network);
     const value = Number(output.value);
     if (address) {
       if (changeAddresses?.has(normalizeAddress(address))) continue;
@@ -164,7 +166,7 @@ const PsbtMultisig = () => {
   const preferFiltered = isFiltered && filteredData.targets.length > 0;
   const displayData = preferFiltered ? filteredData : unfilteredData;
   const displayTotalBtc = new BigNumber(displayData.totalSat).dividedBy(100000000).toNumber();
-  const displayTotalFiat = satoshiToLocalCurrency(displayData.totalSat);
+  const displayTotalFiat = coinHasFiat(wallet.coin) ? satoshiToLocalCurrency(displayData.totalSat, true, wallet.coin) : '';
 
   const howManySignaturesWeHave = psbt ? wallet.calculateHowManySignaturesWeHaveFromPsbt(psbt) : 0;
   const confirmEnabled = howManySignaturesWeHave >= wallet.getM();
@@ -174,6 +176,7 @@ const PsbtMultisig = () => {
     if (!psbt) return 0;
     return wallet.calculateFeeFromPsbt(psbt);
   };
+  const feeFiat = coinHasFiat(wallet.coin) ? satoshiToLocalCurrency(getFee(), true, wallet.coin) : '';
 
   useEffect(() => {
     if (!psbt || !receivedPSBTBase64 || receivedPSBTBase64 === psbt.toBase64()) return;
@@ -386,9 +389,13 @@ const PsbtMultisig = () => {
           <View style={styles.feeContainer}>
             <View style={styles.bottomFeesWrapper}>
               <BlueText selectable style={stylesHook.feeFiatText}>
-                {loc.formatString(loc.multisig.fee, { number: satoshiToLocalCurrency(getFee()) })} -{' '}
+                {loc.formatString(loc.multisig.fee, { number: feeFiat })} -{' '}
               </BlueText>
-              <BlueText selectable>{loc.formatString(loc.multisig.fee_btc, { number: satoshiToBTC(getFee()) })}</BlueText>
+              <BlueText selectable>
+                {wallet.coin
+                  ? `${satoshiToBTC(getFee())} ${unitLabel(BitcoinUnit.BTC, wallet.coin)}`
+                  : loc.formatString(loc.multisig.fee_btc, { number: satoshiToBTC(getFee()) })}
+              </BlueText>
             </View>
           </View>
           <View style={styles.flexConfirm}>

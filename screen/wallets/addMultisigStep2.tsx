@@ -10,6 +10,7 @@ import { encodeUR } from '../../blue_modules/ur';
 import { MultisigCosigner } from '../../class/multisig-cosigner';
 import { HDSegwitBech32Wallet } from '../../class/wallets/hd-segwit-bech32-wallet';
 import { MultisigHDWallet } from '../../class/wallets/multisig-hd-wallet';
+import { getMultisigWallet } from '../../class/wallet-registry';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
@@ -40,6 +41,8 @@ const WalletsAddMultisigStep2 = () => {
   const route = useRoute<RouteProp<AddWalletStackParamList, 'WalletsAddMultisigStep2'>>();
   const params = route.params;
   const { m, n, format, walletLabel } = params;
+  // the class of vault to create: Bitcoin's, or the one of another network
+  const Multisig: typeof MultisigHDWallet = getMultisigWallet(params.multisigId).Wallet;
   const [cosigners, setCosigners] = useState<CosignerTuple[]>([]); // array of cosigners user provided. if format [cosigner, fp, path]
   const [isLoading, setIsLoading] = useState(false);
   const [vaultKeyData, setVaultKeyData] = useState({ keyIndex: 1, seed: '', isLoading: false }); // string rendered in modal
@@ -126,21 +129,21 @@ const WalletsAddMultisigStep2 = () => {
   };
 
   const _onCreate = async () => {
-    const w = new MultisigHDWallet();
+    const w = new Multisig();
     w.setM(m);
     switch (format) {
       case MultisigHDWallet.FORMAT_P2WSH:
         w.setNativeSegwit();
-        w.setDerivationPath(MultisigHDWallet.PATH_NATIVE_SEGWIT);
+        w.setDerivationPath(Multisig.PATH_NATIVE_SEGWIT);
         break;
       case MultisigHDWallet.FORMAT_P2SH_P2WSH:
       case MultisigHDWallet.FORMAT_P2SH_P2WSH_ALT:
         w.setWrappedSegwit();
-        w.setDerivationPath(MultisigHDWallet.PATH_WRAPPED_SEGWIT);
+        w.setDerivationPath(Multisig.PATH_WRAPPED_SEGWIT);
         break;
       case MultisigHDWallet.FORMAT_P2SH:
         w.setLegacy();
-        w.setDerivationPath(MultisigHDWallet.PATH_LEGACY);
+        w.setDerivationPath(Multisig.PATH_LEGACY);
         break;
       default:
         console.error('Unexpected format:', format);
@@ -166,31 +169,31 @@ const WalletsAddMultisigStep2 = () => {
     let path = '';
     switch (format) {
       case MultisigHDWallet.FORMAT_P2WSH:
-        path = MultisigHDWallet.PATH_NATIVE_SEGWIT;
+        path = Multisig.PATH_NATIVE_SEGWIT;
         break;
       case MultisigHDWallet.FORMAT_P2SH_P2WSH:
       case MultisigHDWallet.FORMAT_P2SH_P2WSH_ALT:
-        path = MultisigHDWallet.PATH_WRAPPED_SEGWIT;
+        path = Multisig.PATH_WRAPPED_SEGWIT;
         break;
       case MultisigHDWallet.FORMAT_P2SH:
-        path = MultisigHDWallet.PATH_LEGACY;
+        path = Multisig.PATH_LEGACY;
         break;
       default:
         console.error('Unexpected format:', format);
         throw new Error('This should never happen');
     }
     return path;
-  }, [format]);
+  }, [format, Multisig]);
 
   const setXpubCacheForMnemonics = useCallback(
     (seed: string, passphrase?: string) => {
       const path = getPath();
-      const w = new MultisigHDWallet();
+      const w = new Multisig();
       w.setDerivationPath(path);
       staticCache[seed + path + passphrase] = w.convertXpubToMultisignatureXpub(MultisigHDWallet.seedToXpub(seed, path, passphrase));
       return staticCache[seed + path + passphrase];
     },
-    [getPath],
+    [getPath, Multisig],
   );
 
   const setFpCacheForMnemonics = useCallback((seed: string, passphrase?: string) => {

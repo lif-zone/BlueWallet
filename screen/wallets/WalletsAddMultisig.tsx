@@ -50,7 +50,7 @@ const multisigReducer = (state: MultisigState, action: MultisigAction): Multisig
 const WalletsAddMultisig: React.FC = () => {
   const { colors } = useTheme();
   const { navigate } = useNavigation<NavigationProps>();
-  const { walletLabel } = useRoute<RouteProps>().params;
+  const { walletLabel, multisigId } = useRoute<RouteProps>().params;
 
   const [state, dispatch] = useReducer(multisigReducer, {
     m: 2,
@@ -69,8 +69,8 @@ const WalletsAddMultisig: React.FC = () => {
 
   const onLetsStartPress = useCallback(() => {
     resetScanWasBBQR();
-    navigate('WalletsAddMultisigStep2', { m: state.m, n: state.n, format: state.format, walletLabel });
-  }, [navigate, state.m, state.n, state.format, walletLabel]);
+    navigate('WalletsAddMultisigStep2', { m: state.m, n: state.n, format: state.format, walletLabel, multisigId });
+  }, [navigate, state.m, state.n, state.format, walletLabel, multisigId]);
 
   const showAdvancedOptionsModal = useCallback(() => {
     navigate('MultisigAdvanced', {
