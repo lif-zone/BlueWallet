@@ -248,6 +248,8 @@ const ReceiveDetails = () => {
       return;
     }
     if (address) {
+      // push notifications are of Bitcoin: nothing of another coin is sent to their server
+      if (wallet.coin) return;
       try {
         await tryToObtainPermissions();
         majorTomToGroundControl([address], [], []);
@@ -297,6 +299,7 @@ const ReceiveDetails = () => {
 
     setAddressBIP21Encoded(newAddress);
 
+    if (wallet.coin) return;
     try {
       await tryToObtainPermissions();
       majorTomToGroundControl([newAddress], [], []);
