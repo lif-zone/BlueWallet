@@ -69,11 +69,20 @@ export class AbstractWallet {
     return this._lastTxFetch;
   }
 
+  /**
+   * The type the wallet is saved as, which selects the wallet type that loads it. Also part of its ID.
+   * A wallet of another network overrides it: its `type` is the one of the wallet class it is made of,
+   * so that the app treats it as that kind of wallet, and it is saved as a type of its own.
+   */
+  getSavedType(): string {
+    return this.type;
+  }
+
   getID(): string {
     const thisWithPassphrase = this as unknown as WalletWithPassphrase;
     const passphrase = thisWithPassphrase.getPassphrase ? thisWithPassphrase.getPassphrase() : '';
     const path = this._derivationPath ?? '';
-    const string2hash = this.type + this.getSecret() + passphrase + path;
+    const string2hash = this.getSavedType() + this.getSecret() + passphrase + path;
     return uint8ArrayToHex(sha256(string2hash));
   }
 
