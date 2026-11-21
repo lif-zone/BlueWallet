@@ -109,3 +109,19 @@ export function registerMnemonicImporter(importer: TMnemonicImporter): void {
 export function getMnemonicImporters(): TMnemonicImporter[] {
   return mnemonicImporters;
 }
+
+/**
+ * Gives the single-address wallets a private key (WIF) may belong to, besides the ones the import knows.
+ * As a mnemonic importer: the first is the default kind, and the import keeps the ones that were used.
+ */
+export type TWifImporter = (wif: string) => TWallet[];
+
+const wifImporters: TWifImporter[] = [];
+
+export function registerWifImporter(importer: TWifImporter): void {
+  wifImporters.push(importer);
+}
+
+export function getWifImporters(): TWifImporter[] {
+  return wifImporters;
+}

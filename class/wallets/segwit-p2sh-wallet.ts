@@ -102,7 +102,7 @@ export class SegwitP2SHWallet extends LegacyWallet {
     if (targets.length === 0) throw new Error('No destination provided');
     const { inputs, outputs, fee } = this.coinselect(utxos, targets, feeRate);
     sequence = sequence || 0xffffffff; // disable RBF by default
-    const psbt = new bitcoin.Psbt();
+    const psbt = this._newPsbt();
     let c = 0;
     const keyPair = ECPair.fromWIF(this.secret);
 

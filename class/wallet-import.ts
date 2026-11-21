@@ -22,7 +22,7 @@ import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import bip39WalletFormatsElectrum from './bip39_wallet_formats.json' with {type: 'json'}; // https://github.com/spesmilo/electrum/blob/master/electrum/bip39_wallet_formats.json
 import bip39WalletFormatsBlueWallet from './bip39_wallet_formats_bluewallet.json' with {type: 'json'};
 import type { TWallet } from './wallets/types';
-import { getMnemonicImporters } from './wallet-registry';
+import { getMnemonicImporters, getWifImporters } from './wallet-registry';
 import { errorMessage } from '../helpers/errorMessage';
 
 // Canonicalize a user-typed derivation path: trim, iOS smart quotes and h/H hardened notation
@@ -451,12 +451,37 @@ const startImport = (
         yield { wallet: legacyWallet };
       }
 
+      // the wallets of the other wallet types this key may belong to
+      const unused: TWallet[] = [];
+      for (const importer of getWifImporters()) {
+        const candidates = importer(text);
+        for (const wallet of candidates) {
+          yield { progress: wallet.typeReadable };
+          let used = false;
+          try {
+            used = await wasUsed(wallet);
+            if (used) await fetch(wallet, true);
+          } catch (e) {
+            console.log('[wallet-import]', wallet.typeReadable, 'check failed:', errorMessage(e));
+          }
+          if (used) {
+            yield { wallet };
+            walletFound = true;
+          } else if (wallet === candidates[0]) {
+            unused.push(wallet);
+          }
+        }
+      }
+
       // if no wallets was ever used, import all of them
       if (!walletFound) {
         yield { wallet: segwitBech32Wallet };
         yield { wallet: segwitWallet };
         yield { wallet: legacyWallet };
         yield { wallet: taprootWallet };
+        for (const wallet of unused) {
+          yield { wallet };
+        }
       }
     }
 
