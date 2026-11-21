@@ -2,7 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import './node_env.js';
 import {html_elm_frag_append} from 'lif-kernel/util';
-import {load_progress} from 'lif-kernel/load_progress';
+import {load_progress, load_error} from 'lif-kernel/load_progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getLocales} from 'react-native-localize';
 import {resolveLangCodeFromRnLocales} from '../loc/resolveDeviceLangCode';
@@ -56,14 +56,11 @@ class ErrorBoundary extends React.Component<{children: any}, {error: any}> {
   }
   componentDidCatch(error: any, info: any){
     console.error('ErrorBoundary caught:', error, info?.componentStack);
+    load_error(error, {title: 'Render Error'});
   }
   render(){
-    if (this.state.error){
-      return <div style={{padding: 32}}>
-        <div style={{fontSize: 24, color: '#e74c3c'}}>Render Error</div>
-        <pre style={{fontSize: 12, whiteSpace: 'pre-wrap'}}>{this.state.error.message+'\n'+this.state.error.stack}</pre>
-      </div>;
-    }
+    if (this.state.error)
+      return null;
     return this.props.children;
   }
 }
@@ -189,9 +186,6 @@ async function require_init_early(){
   } catch(e){
     l.remove();
     console.error('App load error:', e);
-    root.render(<div style={{padding: 32}}>
-      <div style={{fontSize: 24, color: '#e74c3c'}}>Load Error</div>
-      <pre style={{fontSize: 12, whiteSpace: 'pre-wrap'}}>{e.message+'\n'+e.stack}</pre>
-    </div>);
+    load_error(e, {title: 'Load Error'});
   }
 })();
