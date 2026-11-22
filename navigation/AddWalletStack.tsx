@@ -216,12 +216,15 @@ const createAddWalletOptions = (theme: ReturnType<typeof useTheme>) =>
           id: 'wallets',
           text: loc.multisig.wallet_type,
           displayInline: true,
-          subactions: addWalletTypes.map((walletType, index) => ({
-            id: walletType.id,
-            text: walletType.text,
-            subtitle: walletType.subtitle,
-            menuState: index === selectedIndex && selectedWalletType === kindWalletType,
-          })),
+          // Lightning is Bitcoin's: not offered for the kinds of another option
+          subactions: addWalletTypes
+            .filter(walletType => kindWalletType === Chain.ONCHAIN || walletType.id !== LightningCustodianWallet.type)
+            .map((walletType, index) => ({
+              id: walletType.id,
+              text: walletType.text,
+              subtitle: walletType.subtitle,
+              menuState: index === selectedIndex && selectedWalletType === kindWalletType,
+            })),
         },
       ];
 
