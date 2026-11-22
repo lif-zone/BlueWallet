@@ -11,12 +11,12 @@ interface SheetHeaderProps {
 }
 
 /**
- * Title and close for a form sheet on Android. react-native-screens skips the toolbar on Android form sheets, so they
- * live in the content there. iOS uses the native header and gets nothing here.
+ * Title and close for a form sheet on Android and web. react-native-screens skips the toolbar on Android form sheets, so
+ * they live in the content there. iOS uses the native header and gets nothing here.
  */
 const SheetHeader: React.FC<SheetHeaderProps> = ({ title, onClose }) => {
   const { colors, closeImage } = useTheme();
-  if (Platform.OS !== 'android') return null;
+  if (Platform.OS === 'ios') return null;
 
   const stylesHook = StyleSheet.create({
     title: {
