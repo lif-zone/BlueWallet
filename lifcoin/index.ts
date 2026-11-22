@@ -119,7 +119,7 @@ registerAddWalletOption({
   testID: 'ActivateLifVaultButton',
   button: {
     image: {uri: import.meta.resolve('./lifcoin.png')},
-    title: 'Lifcoin Vault',
+    title: 'Lifcoin Multisig Vault',
     explain: 'LIF multisig vault, for large amounts',
     borderColorActive: 'foregroundColor',
   },
