@@ -122,4 +122,4 @@ git push
 - LIF test wallet "claude lif test" holds the user's LIF. Keys:
   `~/claude_lif.json`. Never press "Send now": the user does.
 - By day: a sanity test only. Full and negative tests at night.
-- Log each code change in `~/lif-coin/prompt.txt`: `USER:`, `CLAUDE:`, `---`.
+- No `prompt.txt` log for BlueWallet changes.
