@@ -23,6 +23,11 @@ export type TCoin = {
   uriScheme?: string;
   /** Its block explorer: a transaction is at `<explorer>/tx/<txid>`. A coin without it has no links to an explorer. */
   explorer?: string;
+  /**
+   * The image drawn in the corner of the card of its wallets (an image source), for left-to-right and for
+   * right-to-left layouts. A coin without it has the one of Bitcoin.
+   */
+  shape?: { ltr: any; rtl: any };
 };
 
 export const Chain = {

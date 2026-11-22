@@ -434,7 +434,8 @@ export const WalletCarouselItem: React.FC<WalletCarouselItemProps> = ({
       image = direction === 'rtl' ? require('../img/vault-shape-rtl.png') : require('../img/vault-shape.png');
       break;
     default:
-      image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
+      if (item.coin?.shape) image = direction === 'rtl' ? item.coin.shape.rtl : item.coin.shape.ltr;
+      else image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
   }
 
   let latestTransactionText;
