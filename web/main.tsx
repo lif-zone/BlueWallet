@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import './node_env.js';
 import {html_elm_frag_append} from 'lif-kernel/util';
 import {load_progress, load_error} from 'lif-kernel/load_progress';
+import {load_header} from './load_header.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getLocales} from 'react-native-localize';
 import {resolveLangCodeFromRnLocales} from '../loc/resolveDeviceLangCode';
@@ -171,7 +172,8 @@ async function require_init_early(){
 }
 
 (async()=>{
-  let l = load_progress({text: 'Loading BlueWallet…'});
+  let h = load_header();
+  let l = load_progress();
   try {
     await require_init_early();
     await loc_init_early();
@@ -181,9 +183,11 @@ async function require_init_early(){
     let loc = (await import('../loc/index.ts')).default;
     toast_texts.copied = ()=>loc._.copied;
     loc_init_all();
+    h.remove();
     l.remove();
     root.render(<ErrorBoundary><App /></ErrorBoundary>);
   } catch(e){
+    h.remove();
     l.remove();
     console.error('App load error:', e);
     load_error(e, {title: 'Load Error'});
