@@ -8,11 +8,6 @@
 - LIF wallet kinds still missing (Bitcoin has them). Each needs its base
   class to use this.network / this.electrum (anycoin), a LIF variant
   (lif_wallet_class) and its way in:
-  - Watch-only: a bare Lpub that was never used is imported as SegWit
-    (p2wpkh), also when it is the key of a Legacy or Taproot wallet: its
-    addresses are then wrong. A descriptor or [fp/path]Lpub says the kind.
-    To do: offer the four kinds in the Discovery list (needs a name per
-    kind). ypub / zpub texts are checked on Bitcoin only.
   - Watch-only with an external signer: the screen that shows the PSBT was
     run, and signing + combining in the page. Giving the signed PSBT back
     through the screen (scan, file) was not run. Taproot: cosignPsbt does
@@ -29,5 +24,3 @@
 - The LIF kinds other than HDlif (HD and single-address: Legacy, P2SH,
   Taproot, single-address SegWit): a real send on the LIF network was not
   done yet (signing was tested with a fake coin).
-- Wallet details of a LIF wallet: the button says "Show Wallet XPUB" (the
-  key is an Lpub).
