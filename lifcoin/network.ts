@@ -23,9 +23,10 @@ export const LIF_USD_DEFAULT = 0.01;
 // payment links: lifcoin:lif1...?amount=... Its block explorer (the code of
 // blockstream.info): a transaction is at <explorer>/tx/<txid>. And the L in
 // a circle in the corner of the card of a LIF wallet, as the B of Bitcoin.
-// The images are made of lif-kernel/lif_l.svg: lifcoin.png (the icon, 102
-// pixels), lif-shape.png and lif-shape-rtl.png (the card: the circle in
-// white at 20%, the L cut out, 375 x 360 as img/btc-shape.png).
+// The images: lifcoin.png (the icon, 102 pixels) is made of
+// lif-wallet/coin_lif.svg. lif-shape.png and lif-shape-rtl.png (the card:
+// the circle in white at 20%, the L cut out, 375 x 360 as
+// img/btc-shape.png) are made of lif-kernel/lif_l.svg.
 export const lif_coin = {
   units: {BTC: 'LIF', sats: 'sats'},
   price: {currency: 'USD', rate: LIF_USD_DEFAULT},
