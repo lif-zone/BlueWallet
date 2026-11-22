@@ -20,13 +20,21 @@ export const lif_network: bitcoin.Network = {
 export const LIF_USD_DEFAULT = 0.01;
 
 // how LIF amounts are shown: 1 LIF is 100,000,000 sats. Its price. Its
-// payment links: lifcoin:lif1...?amount=... And its block explorer (the
-// code of blockstream.info): a transaction is at <explorer>/tx/<txid>
+// payment links: lifcoin:lif1...?amount=... Its block explorer (the code of
+// blockstream.info): a transaction is at <explorer>/tx/<txid>. And the L in
+// a circle in the corner of the card of a LIF wallet, as the B of Bitcoin.
+// The images are made of lif-kernel/lif_l.svg: lifcoin.png (the icon, 102
+// pixels), lif-shape.png and lif-shape-rtl.png (the card: the circle in
+// white at 20%, the L cut out, 375 x 360 as img/btc-shape.png).
 export const lif_coin = {
   units: {BTC: 'LIF', sats: 'sats'},
   price: {currency: 'USD', rate: LIF_USD_DEFAULT},
   uriScheme: 'lifcoin',
   explorer: 'https://explorer.pub.site',
+  shape: {
+    ltr: {uri: import.meta.resolve('./lif-shape.png')},
+    rtl: {uri: import.meta.resolve('./lif-shape-rtl.png')},
+  },
 };
 
 // BIP44 coin type: m/84'/1842'/0'
