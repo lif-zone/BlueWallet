@@ -29,7 +29,5 @@
 - The LIF kinds other than HDlif (HD and single-address: Legacy, P2SH,
   Taproot, single-address SegWit): a real send on the LIF network was not
   done yet (signing was tested with a fake coin).
-- Add Wallet, kind menu (more_horiz) with Lifcoin selected: "Lightning" is
-  offered, and picking it switches to Bitcoin's Lightning option.
 - Wallet details of a LIF wallet: the button says "Show Wallet XPUB" (the
   key is an Lpub).
