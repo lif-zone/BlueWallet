@@ -54,10 +54,8 @@ export function lif_wallet_class<T extends new(...args: any[])=>any>(
       return lif_coin;
     }
 
-    _newPsbt(){
-      let psbt = super._newPsbt();
-      psbt.setMaximumFeeRate(LIF_MAX_FEE_RATE);
-      return psbt;
+    _psbtOptions(){
+      return {...super._psbtOptions(), maximumFeeRate: LIF_MAX_FEE_RATE};
     }
 
     // An address of the older kinds (1..., 3...) is written the same on

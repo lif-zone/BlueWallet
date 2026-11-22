@@ -8,24 +8,28 @@
 - LIF wallet kinds still missing (Bitcoin has them). Each needs its base
   class to use this.network / this.electrum (anycoin), a LIF variant
   (lif_wallet_class) and its way in:
-  - Watch-only: an Lpub inside a descriptor (wpkh([fp/path]Lpub...)) or as
-    [fp/path]Lpub is not read: a bare Lpub and an address are. So the
-    Taproot watch-only export (a tr(...) descriptor) does not import back.
-    ypub / zpub texts are checked on Bitcoin only.
-  - Watch-only with an external signer (hardware wallet, PSBT screens): the
-    PSBT is made and an HD wallet cosigns it, but the screens were not run
-    for LIF. Taproot: cosignPsbt does not finalize (same on Bitcoin).
+  - Watch-only: a bare Lpub that was never used is imported as SegWit
+    (p2wpkh), also when it is the key of a Legacy or Taproot wallet: its
+    addresses are then wrong. A descriptor or [fp/path]Lpub says the kind.
+    To do: offer the four kinds in the Discovery list (needs a name per
+    kind). ypub / zpub texts are checked on Bitcoin only.
+  - Watch-only with an external signer: the screen that shows the PSBT was
+    run, and signing + combining in the page. Giving the signed PSBT back
+    through the screen (scan, file) was not run. Taproot: cosignPsbt does
+    not finalize (same on Bitcoin).
   - Import of a private key with a script prefix (p2wpkh:WIF): Bitcoin
     only.
-  - Multisig vault, not done: screen/wallets/ViewEditMultisigCosigners.tsx
-    and the screens that sign a vault transaction were not run for LIF; a
+  - Multisig vault, not done: a signature given from outside (scan, file)
+    was not run; other formats than 2 of 3 P2WSH were not run; a
     cosigner key given as an xpub with a LIF path is not converted to
     Ypub/Zpub (class/multisig-cosigner.ts does it for the Bitcoin paths);
     texts of the "Lifcoin Vault" option are not translated.
   - aezeed (the seed of the lnd Lightning node): no LIF wallet for it. Its
     path is fixed to Bitcoin's in class/wallets/hd-aezeed-wallet.ts.
-  - Electrum seed, SLIP39: the import logic was tested, not the Import
-    Wallet screens (several SLIP39 shares, passphrase).
 - The LIF kinds other than HDlif (HD and single-address: Legacy, P2SH,
   Taproot, single-address SegWit): a real send on the LIF network was not
   done yet (signing was tested with a fake coin).
+- Add Wallet, kind menu (more_horiz) with Lifcoin selected: "Lightning" is
+  offered, and picking it switches to Bitcoin's Lightning option.
+- Wallet details of a LIF wallet: the button says "Show Wallet XPUB" (the
+  key is an Lpub).

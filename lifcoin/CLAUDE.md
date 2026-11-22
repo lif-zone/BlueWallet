@@ -92,6 +92,9 @@ git push
   variant of a BlueWallet wallet class. A new LIF wallet kind: make it
   there, never copy a wallet class. The base class must use `this.network`
   and `this.electrum` (fix it in anycoin).
+- LIF fees are about 5000 sat/vbyte, the default limit of bitcoinjs: a
+  PSBT must be made by `wallet._newPsbt()` or read by
+  `wallet._readPsbt(text)`, never `bitcoin.Psbt.fromBase64()` (anycoin).
 - `wallet.type` of a LIF wallet is the type of its base class
   (`HDsegwitBech32`, `watchOnly`...): the app has many
   `wallet.type===X.type` tests. It is saved as `opt.type` (`HDlif`...),
@@ -101,7 +104,8 @@ git push
   `HDlifLegacy`, `HDlifP2SH`, `HDlifTaproot`.
 - `lifcoin/key_lif_wallet.ts`: the single-address kinds (one WIF), made by
   Import Wallet only.
-- `lifcoin/watch_lif_wallet.ts`: watch-only, of an address or an Lpub.
+- `lifcoin/watch_lif_wallet.ts`: watch-only, of an address or an Lpub
+  (bare, `[fp/path]Lpub`, or in a descriptor: these two say the kind).
 - `lifcoin/seed_lif_wallet.ts`: HD wallets of an Electrum seed (paths
   without a coin type: the keys of the Bitcoin wallet) and of SLIP39
   shares. Made by Import Wallet only.
