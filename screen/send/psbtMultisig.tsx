@@ -120,7 +120,7 @@ const PsbtMultisig = () => {
 
   const [psbt, setPsbt] = useState<bitcoin.Psbt | null>(() => {
     try {
-      return bitcoin.Psbt.fromBase64(psbtBase64);
+      return wallet._readPsbt(psbtBase64);
     } catch (error) {
       console.error('Error loading initial PSBT:', error);
       presentAlert({ message: loc.send.invalid_psbt });

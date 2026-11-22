@@ -1218,8 +1218,8 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
    * @returns {Transaction}
    */
   combinePsbt(base64one: string | Psbt, base64two: string | Psbt) {
-    const final1 = typeof base64one === 'string' ? bitcoin.Psbt.fromBase64(base64one) : base64one;
-    const final2 = typeof base64two === 'string' ? bitcoin.Psbt.fromBase64(base64two) : base64two;
+    const final1 = this._readPsbt(base64one);
+    const final2 = this._readPsbt(base64two);
     final1.combine(final2);
 
     let extractedTransaction;
@@ -1374,6 +1374,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
    * @returns {{ tx: Transaction }}
    */
   cosignPsbt(psbt: Psbt) {
+    this._readPsbt(psbt);
     const seed = this._getSeed();
     const hdRoot = bip32.fromSeed(seed);
 

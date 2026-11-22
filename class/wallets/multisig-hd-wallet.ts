@@ -1307,6 +1307,7 @@ export class MultisigHDWallet extends AbstractHDElectrumWallet {
    * and returns Transaction (ready to extract hex)
    */
   cosignPsbt(psbt: Psbt): { tx: Transaction | false } {
+    this._readPsbt(psbt);
     // deriving a seed is an expensive pbkdf2 operation, so we prepare each signing cosigner's hd root
     // only once and reuse it for every input
     const hdRoots: { cosignerIndex: number; hdRoot: BIP32Interface }[] = [];
