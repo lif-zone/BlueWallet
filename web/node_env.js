@@ -41,10 +41,3 @@ globalThis.require = function(path){
 globalThis.require.register = (path, mod)=>{
   require_modules[path] = mod;
 };
-// enable from URL: ?NODE_ENV=development
-// enable from console: localStorage.setItem('NODE_ENV', 'development');
-let node_env = new URLSearchParams(location.search).get('NODE_ENV') ||
-  localStorage.getItem('NODE_ENV');
-if (node_env)
-  console.log('NODE_ENV '+node_env);
-((globalThis.process ||= {}).env ||= {}).NODE_ENV = node_env||'production';
