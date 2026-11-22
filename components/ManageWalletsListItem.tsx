@@ -27,14 +27,15 @@ const getHdElectrumWallet = (wallet: TWallet): AbstractHDElectrumWallet | undefi
   return undefined;
 };
 
-const getWalletIconImage = (walletType: string, direction: string) => {
-  switch (walletType) {
+const getWalletIconImage = (wallet: TWallet, direction: string) => {
+  switch (wallet.type) {
     case LightningCustodianWallet.type:
     case LightningArkWallet.type:
       return direction === 'rtl' ? require('../img/lnd-shape-rtl.png') : require('../img/lnd-shape.png');
     case MultisigHDWallet.type:
       return direction === 'rtl' ? require('../img/vault-shape-rtl.png') : require('../img/vault-shape.png');
     default:
+      if (wallet.coin?.shape) return direction === 'rtl' ? wallet.coin.shape.rtl : wallet.coin.shape.ltr;
       return direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
   }
 };
@@ -118,7 +119,7 @@ const ManageWalletsListItem: React.FC<ManageWalletsListItemProps> = ({
   if (item.type === ItemType.WalletSection) {
     const wallet = item.data;
     const titleColor = dark ? colors.foregroundColor : colors.darkGray;
-    const iconImage = getWalletIconImage(wallet.type, direction);
+    const iconImage = getWalletIconImage(wallet, direction);
 
     const canSwipe = !isActive && !globalDragActive;
     const isHidden = !!wallet.hideBalance;
@@ -321,7 +322,7 @@ const WalletGroupComponent: React.FC<WalletGroupProps> = ({
   }, [navigateToWallet, wallet]);
 
   const titleColor = dark ? colors.foregroundColor : colors.darkGray;
-  const iconImage = getWalletIconImage(wallet.type, direction);
+  const iconImage = getWalletIconImage(wallet, direction);
 
   const renderAddress = (address: AddressSectionItem, index: number) => {
     const computedBalance = hdElectrum?.getBalanceForExternalIndex(address.data.index) ?? 0;
