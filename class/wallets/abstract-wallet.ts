@@ -261,6 +261,8 @@ export class AbstractWallet {
       this.secret.startsWith('tr(')
     ) {
       const xpubIndex = Math.max(this.secret.indexOf('xpub'), this.secret.indexOf('ypub'), this.secret.indexOf('zpub'));
+      // a descriptor without one of these keys (the key of another network): not ours, the text stays as it is, and is not valid
+      if (xpubIndex < 0) return this;
       let fpAndPath;
       if (this.secret.includes('[')) {
         fpAndPath = this.secret.substring(this.secret.indexOf('['), xpubIndex).replace(/[[\]]/g, '');

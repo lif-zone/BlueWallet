@@ -846,7 +846,7 @@ const SendDetails = () => {
 
       if (DeeplinkSchemaMatch.isPossiblyPSBTFile(String(res.name))) {
         const file = await RNFS.readFile(res.uri, 'ascii');
-        const psbt = bitcoin.Psbt.fromBase64(file);
+        const psbt = wallet._readPsbt(file);
 
         // first, lets check if tx signed. we will try to finalize it, and then we will
         // try to extract transaction:

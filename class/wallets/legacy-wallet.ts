@@ -90,11 +90,29 @@ export class LegacyWallet extends AbstractWallet {
   }
 
   /**
-   * An empty transaction to fill and sign, on the wallet's network.
-   * A wallet of another network overrides it when its transactions need other limits (the highest fee rate allowed)
+   * The options of a transaction of this wallet: its network.
+   * A wallet of another network overrides it when its transactions need other limits (maximumFeeRate: the highest fee rate allowed)
+   */
+  _psbtOptions(): { network: bitcoin.Network; maximumFeeRate?: number } {
+    return { network: this.network };
+  }
+
+  /**
+   * An empty transaction to fill and sign, with the options of this wallet.
    */
   _newPsbt(): bitcoin.Psbt {
-    return new bitcoin.Psbt({ network: this.network });
+    return new bitcoin.Psbt(this._psbtOptions());
+  }
+
+  /**
+   * A transaction that was made elsewhere (its base64 text, or already read), with the options of this wallet:
+   * the same limits as a transaction of _newPsbt().
+   */
+  _readPsbt(psbt: string | bitcoin.Psbt): bitcoin.Psbt {
+    const options = this._psbtOptions();
+    if (typeof psbt === 'string') return bitcoin.Psbt.fromBase64(psbt, options);
+    if (options.maximumFeeRate !== undefined) psbt.setMaximumFeeRate(options.maximumFeeRate);
+    return psbt;
   }
 
   /**

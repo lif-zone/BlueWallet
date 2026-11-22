@@ -45,3 +45,9 @@ were not exercised yet. SLIP39: import logic tested, not the screens.
     with "does not provide an export named ..."). The real versions are
     bw-arkade-* in package.json, with the sdk version pinned for boltz-swap
     in lif.patches.
+- A form sheet without a header (the vault key "View" sheet,
+  ViewEditMultisigCosignerViewSheet: headerShown only on iOS) has no way to
+  close on web: no button, Escape and a click outside do nothing. Only the
+  browser Back button leaves it.
+- BlueWallet bug (fixed in the fixes layer): the Receive screen crashed for
+  a SLIP39 wallet (getBIP47PaymentCode called for every wallet).

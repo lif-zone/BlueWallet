@@ -506,7 +506,11 @@ const startImport = (
     // check if text is in hex or base64 format
     const isHexKey = /^[0-9a-fA-F]{64}$/.test(text);
     // an address of another wallet type may look as a key in base64: its an address
-    const isBase64Key = /^[A-Za-z0-9+/=]{43,44}$/.test(text) && !getWatchOnlyImporters().some(importer => importer(text).length > 0);
+    // nor is a text written as a segwit address (prefix, "1", then only the letters and digits of such an address, in one
+    // case): an address with a typing mistake is not a key
+    const looksLikeBech32 = /^([a-z]{1,10}1[ac-hj-np-z02-9]{20,}|[A-Z]{1,10}1[AC-HJ-NP-Z02-9]{20,})$/.test(text);
+    const isBase64Key =
+      /^[A-Za-z0-9+/=]{43,44}$/.test(text) && !looksLikeBech32 && !getWatchOnlyImporters().some(importer => importer(text).length > 0);
 
     let rawKeyBuffer;
     let privateKey;

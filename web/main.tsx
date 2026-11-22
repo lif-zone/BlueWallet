@@ -1,4 +1,5 @@
 // first: sets process.env.NODE_ENV, which React reads when loaded
+import './node_env_mode.js';
 import './node_env.js';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
