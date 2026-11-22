@@ -17,7 +17,8 @@ each a git worktree. Each adds to the one above.
   the directory of that layer, not in ~/BlueWallet-lif.
 - fixes, web2: original files identical to upstream.
 - anycoin: edits original files. Never names LIF. Bitcoin acts as before.
-- master: `lifcoin/`, plus one import line in `class/wallet-types.ts`.
+- master: `lifcoin/`, plus one import line in `class/wallet-types.ts`, and
+  one line in `web/load_header.js` (the L icon of the loading screen).
 - Do not edit: root `CLAUDE.md` (upstream's), a file open in vim
   (`.name.swp`: show the code). Web port rules: `web/CLAUDE.md`.
 

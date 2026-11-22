@@ -7,6 +7,7 @@
 // icon here.
 export const load_coin_icons = [
   import.meta.resolve('../img/addWallet/bitcoin@3x.png'),
+  import.meta.resolve('../lifcoin/lifcoin.png'),
 ];
 
 const app_icon = import.meta.resolve(
