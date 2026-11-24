@@ -15,7 +15,7 @@ import loc_requires from './loc_requires.json' with {type: 'json'};
 import 'dayjs';
 import {texts as toast_texts} from './toast.js';
 import {ark_load} from './arkade.js';
-// the "End-to-end TLS" switch, on the Electrum Server screen
+// the "End-to-end SSL" switch, on the Electrum Server screen
 import './tls_secure.js';
 
 // the BlueWallet application icon (the Android launcher icon), in place of

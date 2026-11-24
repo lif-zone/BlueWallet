@@ -12,7 +12,7 @@ were not exercised yet. SLIP39: import logic tested, not the screens.
   - BlueWallet does not verify TLS (verify==false) because many electrum
     servers are self-signed.
   - client side TLS is off by default, since its slow loading (about 40s to
-    connect). The "End-to-end TLS" switch on the Electrum Server screen
+    connect). The "End-to-end SSL" switch on the Electrum Server screen
     (web/tls_secure.js) turns it on. On by default once loading is faster.
   - TLS for lif_fetch, lif_WebSocket, lif_rpc_websocket.
 - needs still testing

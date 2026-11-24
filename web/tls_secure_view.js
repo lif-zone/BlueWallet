@@ -1,4 +1,4 @@
-// The "End-to-end TLS" switch, in the Electrum Server screen of Settings
+// The "End-to-end SSL" switch, in the Electrum Server screen of Settings
 // (screen/settings/ElectrumSettings.tsx, by a patch of package.json): a
 // row of the Preferred Server section, above its Save button.
 import React, {useState} from 'react';
@@ -17,10 +17,10 @@ export function TlsSecure(){
     <View style={styles.row}>
       <View style={styles.text}>
         <Text style={[styles.title, {color: colors.foregroundColor}]}>
-          End-to-end TLS
+          End-to-end SSL
         </Text>
         <Text style={[styles.note, {color: colors.alternativeTextColor}]}>
-          TLS is made in this browser: the relay node sees only encrypted
+          SSL is made in this browser: the relay node sees only encrypted
           data. Slower to connect.
         </Text>
       </View>
