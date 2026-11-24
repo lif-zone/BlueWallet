@@ -1,4 +1,5 @@
-// The "End-to-end TLS" switch of the web port.
+// The "End-to-end SSL" switch of the web port (SSL: the name of TLS in the
+// application).
 // A TLS connection of the application (the Electrum server) is made over a
 // lif-net out node. Off (default): the out node makes the TLS, and sees the
 // plain data. On: the TLS is made here, in the browser, and the out node
