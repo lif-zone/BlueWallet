@@ -17,6 +17,8 @@ import {texts as toast_texts} from './toast.js';
 import {ark_load} from './arkade.js';
 // the "End-to-end SSL" switch, on the Electrum Server screen
 import './tls_secure.js';
+// a drag with the mouse scrolls, as a swipe
+import './drag_scroll.js';
 
 // the BlueWallet application icon (the Android launcher icon), in place of
 // the icon of the page that loaded us
