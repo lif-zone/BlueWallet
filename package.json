@@ -319,6 +319,12 @@
             "desktop || Math.min(width, height) >= WIDE_LAYOUT_MIN_LENGTH;": "wide_layout(width);"
           }
         },
+        "./screen/settings/ElectrumSettings.tsx": {
+          "replace_line": {
+            "import loc from '../../loc';": "import loc from '../../loc';\nimport {TlsSecure} from 'bw-web/tls_secure_view.js';",
+            "<View style={styles.buttonContainer}>": "<TlsSecure />\n<View style={styles.buttonContainer}>"
+          }
+        },
         "./navigation/DetailViewScreensStack.tsx": {
           "replace_line": {
             "headerRight: () => (isDesktop ? undefined : RightBarButtons),": "headerRight: () => (isWideLayout ? undefined : RightBarButtons),"
