@@ -37,7 +37,7 @@ registerAddWalletOption({
   button: {
     image: {uri: import.meta.resolve('./lifcoin.png')},
     title: 'Lifcoin',
-    explain: 'LIF wallet, on the LIF network',
+    explain: 'Simple and powerful Lifcoin wallet',
     borderColorActive: 'newBlue',
   },
   // entropy the user provided (dice rolls) is mixed into the new wallet
@@ -120,7 +120,7 @@ registerAddWalletOption({
   button: {
     image: {uri: import.meta.resolve('./lifcoin.png')},
     title: 'Lifcoin Multisig Vault',
-    explain: 'LIF multisig vault, for large amounts',
+    explain: loc.multisig.multisig_vault_explain,
     borderColorActive: 'foregroundColor',
   },
   create: ({label, setIsLoading, navigate})=>{

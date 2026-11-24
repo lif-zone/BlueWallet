@@ -3,8 +3,8 @@
 
 ## Open Tasks
 
-- Add Wallet: the texts of the Lifcoin option ("Lifcoin", "LIF wallet, on
-  the LIF network") are not translated: English in every language.
+- Add Wallet: the texts of the Lifcoin option ("Lifcoin", "Simple and
+  powerful Lifcoin wallet") are not translated: English in every language.
 - LIF wallet kinds still missing (Bitcoin has them). Each needs its base
   class to use this.network / this.electrum (anycoin), a LIF variant
   (lif_wallet_class) and its way in:
@@ -18,7 +18,7 @@
     was not run; other formats than 2 of 3 P2WSH were not run; a
     cosigner key given as an xpub with a LIF path is not converted to
     Ypub/Zpub (class/multisig-cosigner.ts does it for the Bitcoin paths);
-    texts of the "Lifcoin Multisig Vault" option are not translated.
+    the title "Lifcoin Multisig Vault" is not translated.
   - aezeed (the seed of the lnd Lightning node): no LIF wallet for it. Its
     path is fixed to Bitcoin's in class/wallets/hd-aezeed-wallet.ts.
 - The LIF kinds other than HDlif (HD and single-address: Legacy, P2SH,
