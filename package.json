@@ -242,7 +242,7 @@
       "@react-native-vector-icons/ionicons": "./web/stubs/react-native-vector-icons-ionicons.js",
       "@react-native-vector-icons/material-design-icons": "./web/stubs/react-native-vector-icons-material-design-icons.js",
       "@react-native-vector-icons/material-icons": "./web/stubs/react-native-vector-icons-material-icons.js",
-      "@react-navigation/elements": "^2.7.0",
+      "@react-navigation/elements": "2.9.46",
       "bc-bech32": "file:./blue_modules/bc-bech32//",
       "bc-ur": "file:./blue_modules/bc-ur//",
       "bs58check": "4.0.0",
@@ -293,7 +293,7 @@
       "react-native-worklets": "./web/stubs/react-native-worklets.js",
       "realm": "./web/stubs/realm.js",
       "stream": "npm:stream-browserify@3.0.0",
-      "ws": "^8.22.2"
+      "ws": "8.23.0"
     },
     "overrides": {
       "@arkade-os/sdk": "./web/stubs/arkade-os-sdk"
