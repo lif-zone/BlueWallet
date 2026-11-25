@@ -57,12 +57,13 @@ dayjs.extend(relativeTime);
 /** Mutates Electrum `vin` entries with `value` and `addresses` from previous outputs so fee = sum(inputs) − sum(outputs) works. */
 async function populateVinValuesFromPrevTxs(fetchedTx: ElectrumTransaction, electrum: TWalletElectrum): Promise<void> {
   if (!fetchedTx?.vin?.length) return;
-  const vinTxids = fetchedTx.vin.map(vin => vin.txid).filter(tid => !!tid);
+  const vinTxids = fetchedTx.vin.map(vin => vin.txid).filter((tid): tid is string => !!tid);
   if (vinTxids.length === 0) return;
   try {
     const prevTransactions = await electrum.multiGetTransactionByTxid(vinTxids, true, 10);
     for (let i = 0; i < fetchedTx.vin.length; i++) {
       const vin = fetchedTx.vin[i];
+      if (vin.txid === undefined || vin.vout === undefined) continue;
       const prevOut = prevTransactions[vin.txid]?.vout?.[vin.vout];
       if (prevOut) {
         vin.value = prevOut.value;
@@ -585,13 +586,14 @@ const TransactionStatus: React.FC = () => {
 
           // Populate vin.value for fee calculation when transaction becomes confirmed
           if (fetchedTx.vin && fetchedTx.vin.length > 0) {
-            const vinTxids = fetchedTx.vin.map(vin => vin.txid).filter(tid => !!tid);
+            const vinTxids = fetchedTx.vin.map(vin => vin.txid).filter((tid): tid is string => !!tid);
             if (vinTxids.length > 0) {
               try {
                 const prevTxs = await electrum.multiGetTransactionByTxid(vinTxids, true, 10);
                 // Populate vin.value from previous transaction outputs
                 for (let i = 0; i < fetchedTx.vin.length; i++) {
                   const vin = fetchedTx.vin[i];
+                  if (vin.txid === undefined || vin.vout === undefined) continue;
                   if (prevTxs[vin.txid]?.vout?.[vin.vout]) {
                     vin.value = prevTxs[vin.txid].vout[vin.vout].value;
                   }

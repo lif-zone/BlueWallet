@@ -14,7 +14,7 @@ import DeeplinkSchemaMatch from '../class/deeplink-schema-match';
 import { useStorage } from '../hooks/context/useStorage';
 import loc, { unitLabel } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
-import { navigationRef } from '../NavigationService';
+import { getCurrentWalletID, navigationRef } from '../NavigationService';
 import { DetailViewStackParamList } from '../navigation/DetailViewStackParamList';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'ClipboardDetected'>;
@@ -111,6 +111,7 @@ const ClipboardDetected = () => {
           addWallet,
           saveToDisk,
           setSharedCosigner,
+          preferredWalletID: getCurrentWalletID(),
         });
       });
     });

@@ -55,9 +55,13 @@ export type TAddressMetadata = {
 };
 
 type TRealmTransaction = {
-  internal: boolean;
-  index: number;
+  walletid: string;
   tx: string;
+} & ({ internal: boolean; index: number } | { internal: null; index: null });
+
+type TRealmKeyValue = {
+  key: string;
+  value: string;
 };
 
 type TBucketStorage = {
@@ -274,7 +278,7 @@ export class BlueApp {
     const fileName = this.hashIt(this.hashIt(password)) + '-wallettransactions.realm';
     const path = `${cacheFolderPath}/${fileName}`; // Use cache folder path
 
-    const schema = [
+    const schema: Realm.ObjectSchema[] = [
       {
         name: 'WalletTransactions',
         properties: {
@@ -285,9 +289,7 @@ export class BlueApp {
         },
       },
     ];
-    // @ts-ignore schema doesn't match Realm's schema type
     return Realm.open({
-      // @ts-ignore schema doesn't match Realm's schema type
       schema,
       path,
       encryptionKey,
@@ -317,7 +319,7 @@ export class BlueApp {
     const encryptionKey = Int8Array.from(buf);
     const path = this.keyValueRealmPath();
 
-    const schema = [
+    const schema: Realm.ObjectSchema[] = [
       {
         name: 'KeyValue',
         primaryKey: 'key',
@@ -327,9 +329,7 @@ export class BlueApp {
         },
       },
     ];
-    // @ts-ignore schema doesn't match Realm's schema type
     return Realm.open({
-      // @ts-ignore schema doesn't match Realm's schema type
       schema,
       path,
       encryptionKey,
@@ -344,7 +344,7 @@ export class BlueApp {
         {
           key,
           value,
-        },
+        } satisfies TRealmKeyValue,
         Realm.UpdateMode.Modified,
       );
     });
@@ -437,8 +437,8 @@ export class BlueApp {
   };
 
   inflateWalletFromRealm(realm: Realm, walletToInflate: TWallet) {
-    const transactions = realm.objects('WalletTransactions');
-    const transactionsForWallet = transactions.filtered(`walletid = "${walletToInflate.getID()}"`) as unknown as TRealmTransaction[];
+    const transactions = realm.objects<TRealmTransaction>('WalletTransactions');
+    const transactionsForWallet = transactions.filtered(`walletid = "${walletToInflate.getID()}"`);
     for (const tx of transactionsForWallet) {
       if (tx.internal === false) {
         if ('_hdWalletInstance' in walletToInflate && walletToInflate._hdWalletInstance) {
@@ -492,7 +492,7 @@ export class BlueApp {
                 internal: false,
                 index: parseInt(indexStr, 10),
                 tx: JSON.stringify(tx),
-              },
+              } satisfies TRealmTransaction,
               Realm.UpdateMode.Modified,
             );
           }
@@ -507,7 +507,7 @@ export class BlueApp {
                 internal: true,
                 index: parseInt(indexStr, 10),
                 tx: JSON.stringify(tx),
-              },
+              } satisfies TRealmTransaction,
               Realm.UpdateMode.Modified,
             );
           }
