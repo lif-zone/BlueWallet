@@ -329,6 +329,11 @@
           "replace_line": {
             "headerRight: () => (isDesktop ? undefined : RightBarButtons),": "headerRight: () => (isWideLayout ? undefined : RightBarButtons),"
           }
+        },
+        "./components/SheetHeader.tsx": {
+          "replace_line": {
+            "if (Platform.OS !== 'android') return null;": ""
+          }
         }
       },
       "github:BlueWallet/SilentPayments": {
