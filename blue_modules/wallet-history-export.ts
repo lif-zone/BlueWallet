@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { LightningTransaction, Transaction } from '../class/wallets/types';
 import { Action } from '../components/types';
 import loc from '../loc';
-import { Chain } from '../models/bitcoinUnits';
+import { BitcoinUnit, Chain, TCoin } from '../models/bitcoinUnits';
 import { CommonToolTipActions } from '../typings/CommonToolTipActions';
 import { isDesktop } from './environment';
 import { encodeCsvRow } from './fs';
@@ -105,8 +105,13 @@ export function createAccountingHistoryRows(
   chain: Chain,
   txMetadata: TTXMetadata,
   now = Date.now(),
+  coin?: TCoin,
 ): AccountingHistoryCell[][] {
-  const rows: AccountingHistoryCell[][] = [Array.from(ACCOUNTING_HISTORY_HEADERS)];
+  // the headers name the units of the coin of the wallet. Undefined: Bitcoin
+  const headers = ACCOUNTING_HISTORY_HEADERS.map(header =>
+    coin ? header.replace('(BTC)', `(${coin.units[BitcoinUnit.BTC]})`).replace('(sats)', `(${coin.units[BitcoinUnit.SATS]})`) : header,
+  );
+  const rows: AccountingHistoryCell[][] = [headers];
 
   for (const transaction of transactions) {
     if (!transaction || typeof transaction !== 'object') continue;
@@ -215,8 +220,9 @@ export function createAccountingHistoryCsv(
   chain: Chain,
   txMetadata: TTXMetadata,
   now = Date.now(),
+  coin?: TCoin,
 ): string {
-  return createAccountingHistoryRows(transactions, chain, txMetadata, now)
+  return createAccountingHistoryRows(transactions, chain, txMetadata, now, coin)
     .map(row => encodeCsvRow(row.map(sanitizeAccountingCsvCell)))
     .join('\r\n');
 }
