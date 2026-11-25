@@ -1,7 +1,7 @@
 // electrum.js - Web ElectrumX client via lif-kernel WebSocket proxy
 // Replaces BlueWallet's BlueElectrum.ts for web
 import * as bitcoin from 'bitcoinjs-lib';
-import {rpc_websocket} from 'lif-kernel/rpc.js';
+import {rpc_websocket} from 'lif-kernel/rpc';
 import {lifnet} from 'lif-kernel/lifnet';
 
 function ws_origin(){
