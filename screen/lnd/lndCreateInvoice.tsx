@@ -14,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import Icon from '../../components/Icon';
-import { parse } from 'url'; // eslint-disable-line n/no-deprecated-api
 import { btcToSatoshi, fiatToBTC, satoshiToBTC } from '../../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import Lnurl from '../../class/lnurl';
@@ -40,7 +39,7 @@ import { errorMessage } from '../../helpers/errorMessage';
 const LNDCreateInvoice = () => {
   const { wallets, saveToDisk } = useStorage();
   const { uri, walletID } = useRoute<RouteProp<LNDStackParamsList, 'LNDCreateInvoice'>>().params;
-  const wallet = useRef(wallets.find(item => item.getID() === walletID) || wallets.find(item => item.chain === Chain.OFFCHAIN));
+  const wallet = useRef(wallets.find(item => item.getID() === walletID));
   const { colors } = useTheme();
   const { navigate, goBack, setParams } = useNavigation();
   const [unit, setUnit] = useState(wallet.current?.getPreferredBalanceUnit() || BitcoinUnit.BTC);
@@ -83,17 +82,9 @@ const LNDCreateInvoice = () => {
   const processLnurl = useCallback(
     async (data: string) => {
       setIsLoading(true);
-      if (!wallet.current) {
-        triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        presentAlert({ message: loc.wallets.no_ln_wallet_error });
-        return goBack();
-      }
 
-      // decoding the lnurl
-      const url = Lnurl.getUrlFromLnurl(data);
-      const { query } = parse(String(url), true);
-
-      if (query.tag === Lnurl.TAG_LOGIN_REQUEST) {
+      // lnurl-auth works with any wallet that can sign, so it is checked before the lightning wallet requirement
+      if (Lnurl.isLnurlAuth(data)) {
         // Close the modal first, then navigate to LnurlAuth in the drawer
         goBack();
         setTimeout(() => {
@@ -102,13 +93,22 @@ const LNDCreateInvoice = () => {
               name: 'LnurlAuth',
               params: {
                 lnurl: data,
-                walletID: walletID ?? wallet.current?.getID(),
+                walletID,
               },
             }),
           );
         }, 100);
         return;
       }
+
+      if (!wallet.current) {
+        triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
+        presentAlert({ message: loc.wallets.no_ln_wallet_error });
+        return goBack();
+      }
+
+      // decoding the lnurl
+      const url = Lnurl.getUrlFromLnurl(data);
 
       // calling the url
       try {
@@ -128,7 +128,7 @@ const LNDCreateInvoice = () => {
             screen: 'LnurlPay',
             params: {
               lnurl: data,
-              walletID: walletID ?? wallet.current.getID(),
+              walletID,
             },
           });
           return;
@@ -363,7 +363,7 @@ const LNDCreateInvoice = () => {
       <View style={styles.walletRoot}>
         {!isLoading && (
           <TouchableOpacity accessibilityRole="button" style={styles.walletChooseWrap} onPress={navigateToSelectWallet}>
-            <Text style={styles.walletChooseText}>{loc.wallets.select_wallet.toLowerCase()}</Text>
+            <Text style={styles.walletChooseText}>{loc.wallets.select_wallet}</Text>
             <Icon name={direction === 'rtl' ? 'angle-left' : 'angle-right'} size={18} type="font-awesome" color="#9aa0aa" />
           </TouchableOpacity>
         )}

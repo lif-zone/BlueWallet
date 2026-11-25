@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigation, RouteProp, useRoute, useLocale } from '@react-navigation/native';
+import { useNavigation, CommonActions, RouteProp, useRoute, useLocale } from '@react-navigation/native';
 import { ActivityIndicator, Keyboard, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Icon from '../../components/Icon';
 
@@ -28,22 +28,22 @@ import { useKeyboard } from '../../hooks/useKeyboard';
 import { BlueLoading } from '../../components/BlueLoading';
 import { LightningArkWallet } from '../../class/wallets/lightning-ark-wallet';
 import { errorMessage } from '../../helpers/errorMessage';
+import { navigationRef } from '../../NavigationService';
 
 type RouteProps = RouteProp<LNDStackParamsList, 'ScanLNDInvoice'>;
 type NavigationProps = NativeStackNavigationProp<RootParamList, 'ScanLNDInvoice'>;
 
 const ScanLNDInvoice = () => {
-  const { wallets, fetchAndSaveWalletTransactions } = useStorage();
+  const { wallets, fetchAndSaveWalletTransactions, addWallet, saveToDisk, setSharedCosigner } = useStorage();
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const { colors } = useTheme();
   const { direction } = useLocale();
   const route = useRoute<RouteProps>();
   const { walletID, uri, openScanner } = route.params || {};
   const [wallet, setWallet] = useState<LightningCustodianWallet | undefined>(
-    (wallets.find(item => item.getID() === walletID) as LightningCustodianWallet) ||
-      (wallets.find(item => item.chain === Chain.OFFCHAIN) as LightningCustodianWallet),
+    wallets.find(item => item.getID() === walletID) as LightningCustodianWallet,
   );
-  const { navigate, setParams, pop } = useNavigation<NavigationProps>();
+  const { navigate, setParams, goBack, pop } = useNavigation<NavigationProps>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [renderWalletSelectionButtonHidden, setRenderWalletSelectionButtonHidden] = useState<boolean>(false);
   const [destination, setDestination] = useState<string>('');
@@ -81,6 +81,8 @@ const ScanLNDInvoice = () => {
       const newWallet = wallets.find(w => w.getID() === walletID) as LightningCustodianWallet;
       if (newWallet) {
         setWallet(newWallet);
+      } else {
+        goBack();
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,6 +115,7 @@ const ScanLNDInvoice = () => {
 
   useEffect(() => {
     if (wallet && uri) {
+      if (Lnurl.isLnurlAuth(uri)) return processLnurlAuth(uri);
       if (Lnurl.isLnurl(uri)) return processLnurlPay(uri);
       if (Lnurl.isLightningAddress(uri)) return processLnurlPay(uri);
 
@@ -186,15 +189,32 @@ const ScanLNDInvoice = () => {
   useKeyboard({ onKeyboardDidShow: _keyboardDidShow, onKeyboardDidHide: _keyboardDidHide });
 
   const processInvoice = (data: string): void => {
+    if (Lnurl.isLnurlAuth(data)) return processLnurlAuth(data);
     if (Lnurl.isLnurl(data)) return processLnurlPay(data);
     if (Lnurl.isLightningAddress(data)) return processLnurlPay(data);
     setParams({ uri: data });
   };
 
+  const processLnurlAuth = useCallback(
+    (data: string): void => {
+      // Close the modal first, then navigate to LnurlAuth in the drawer
+      goBack();
+      setTimeout(() => {
+        navigationRef.dispatch(
+          CommonActions.navigate('LnurlAuth', {
+            lnurl: data,
+            walletID: walletID || wallet?.getID(),
+          }),
+        );
+      }, 100);
+    },
+    [goBack, walletID, wallet],
+  );
+
   const processLnurlPay = (data: string): void => {
     navigate('LnurlPay', {
       lnurl: data,
-      walletID: walletID || wallet?.getID() || '',
+      walletID,
     });
   };
 
@@ -295,7 +315,7 @@ const ScanLNDInvoice = () => {
       <View style={styles.walletSelectRoot}>
         {!isLoading && (
           <TouchableOpacity accessibilityRole="button" style={styles.walletSelectTouch} onPress={naviageToSelectWallet}>
-            <Text style={styles.walletSelectText}>{loc.wallets.select_wallet.toLowerCase()}</Text>
+            <Text style={styles.walletSelectText}>{loc.wallets.select_wallet}</Text>
             <Icon name={direction === 'rtl' ? 'angle-left' : 'angle-right'} size={18} type="font-awesome" color="#9aa0aa" />
           </TouchableOpacity>
         )}
@@ -346,12 +366,17 @@ const ScanLNDInvoice = () => {
   const onBarScanned = useCallback(
     (value: string): void => {
       if (!value) return;
-      DeeplinkSchemaMatch.navigationRouteFor({ url: value }, completionValue => {
-        triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-        navigate(...completionValue);
-      });
+      if (Lnurl.isLnurlAuth(value)) return processLnurlAuth(value);
+      DeeplinkSchemaMatch.navigationRouteFor(
+        { url: value },
+        completionValue => {
+          triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
+          navigate(...completionValue);
+        },
+        { wallets, addWallet, saveToDisk, setSharedCosigner, preferredWalletID: wallet?.getID() },
+      );
     },
-    [navigate],
+    [navigate, processLnurlAuth, wallets, addWallet, saveToDisk, setSharedCosigner, wallet],
   );
 
   useEffect(() => {
