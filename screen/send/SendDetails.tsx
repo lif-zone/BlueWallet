@@ -209,7 +209,7 @@ const SendDetails = () => {
         );
 
         setAddresses(addrs => {
-          addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
+          if (Number(amount) > 0) addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
           return [...addrs];
         });
 
@@ -278,8 +278,11 @@ const SendDetails = () => {
   }, [routeParams.uri, routeParams.address, routeParams.addRecipientParams]);
 
   useEffect(() => {
-    const suitable = wallets.filter(w => w.chain === Chain.ONCHAIN && w.allowSend());
-    const newWallet = (routeParams.walletID && wallets.find(w => w.getID() === routeParams.walletID)) || suitable[0]!;
+    const newWallet = wallets.find(w => w.getID() === routeParams.walletID);
+    if (!newWallet) {
+      navigation.goBack();
+      return;
+    }
     setWallet(newWallet);
     setParams({ feeUnit: newWallet.getPreferredBalanceUnit(), amountUnit: newWallet.getPreferredBalanceUnit() });
 
@@ -1460,7 +1463,7 @@ const SendDetails = () => {
               navigation.navigate('SelectWallet', { chainType: Chain.ONCHAIN, selectedWalletID: wallet?.getID() });
             }}
           >
-            <Text style={styles.selectText}>{loc.wallets.select_wallet.toLowerCase()}</Text>
+            <Text style={styles.selectText}>{loc.wallets.select_wallet}</Text>
             <Icon name={direction === 'rtl' ? 'angle-left' : 'angle-right'} size={18} type="font-awesome" color="#9aa0aa" />
           </Pressable>
         )}
