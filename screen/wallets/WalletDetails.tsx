@@ -275,7 +275,13 @@ const WalletDetails: React.FC = () => {
   );
 
   const createAccountingExport = useCallback(() => {
-    return createAccountingHistoryCsv(wallet.getTransactions() as Array<Transaction & LightningTransaction>, wallet.chain, txMetadata);
+    return createAccountingHistoryCsv(
+      wallet.getTransactions() as Array<Transaction & LightningTransaction>,
+      wallet.chain,
+      txMetadata,
+      undefined,
+      wallet.coin,
+    );
   }, [wallet, txMetadata]);
 
   const exportFileNames = useMemo(() => createHistoryExportFileNames(walletName), [walletName]);
